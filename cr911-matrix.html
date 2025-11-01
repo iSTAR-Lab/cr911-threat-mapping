@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CR911 Threat Matrix</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <style>
+    :root{ --bg:#061226; --panel:#0b1624; --muted:#9fb0c9; --accent:#00d9a3; --cell-border: rgba(255,255,255,0.06); }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#031028 0%,#061428 100%);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#e6eef8}
+    header{padding:28px 32px;display:flex;align-items:center;gap:16px}
+    header h1{margin:0;color:var(--accent);font-size:20px}
+    .wrap{padding:10px 20px 40px;max-width:1400px;margin:0 auto}
+    .controls{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .search{padding:10px 12px;border-radius:10px;border:0;background:#042034;color:#cfe8ff;min-width:260px}
+    .matrix-table{display:flex;gap:12px;align-items:flex-start;overflow:auto;padding-bottom:8px}
+    .column{min-width:260px;padding:6px;flex:0 0 260px}
+    .col-head{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));padding:10px;border-radius:8px;border:1px solid var(--cell-border);font-weight:700;color:var(--accent);font-size:14px;text-align:center}
+    .cell-grid{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+  .cell{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:transform .12s,box-shadow .12s}
+    .cell:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.6)}
+    .cell .title{font-weight:600;font-size:13px}
+    .cell .meta{font-size:12px;color:#9fb0c9;margin-top:6px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(1,8,14,0.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}
+    .modal{background:#041825;border-radius:14px;padding:0;max-width:1000px;width:100%;max-height:90vh;overflow:hidden;border:1px solid rgba(255,255,255,0.08)}
+    .modal header{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;gap:10px;align-items:center}
+    .modal h2{margin:0;color:#e9f7ff;font-size:18px}
+    .modal .subtitle{color:#9fb0c9;font-size:12px}
+    .modal .toolbar{margin-left:auto;display:flex;gap:8px}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;background:#072432;border:1px solid rgba(255,255,255,0.08);color:#bfefff;text-decoration:none;font-size:12px;cursor:pointer}
+    .content{display:grid;grid-template-columns:1fr 260px}
+    .playbook-pane{padding:18px 20px;overflow:auto}
+    .meta-pane{border-left:1px solid rgba(255,255,255,0.06);padding:18px 16px;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.015))}
+  .tag{display:inline-block;background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:8px;color:#cfe8ff;font-size:12px;margin:6px 6px 0 0}
+  .tag.muted{background:rgba(255,255,255,0.02);color:#76859d;border:1px dashed rgba(255,255,255,0.1)}
+  .meta-block{margin-bottom:16px;font-size:13px;color:#b7c7df}
+  .meta-block .heading{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6f84a3;margin-bottom:4px}
+    .prose{line-height:1.6;font-size:15px;color:#e9f4ff}
+    .prose pre{background:#0a1f33;border:1px solid rgba(255,255,255,0.06);padding:12px;border-radius:10px;overflow:auto}
+    footer{max-width:1200px;margin:20px auto 60px;padding:0 20px;color:#9fb0c9;font-size:13px}
+    @media(max-width:980px){ .content{grid-template-columns:1fr} .meta-pane{border-left:0;border-top:1px solid rgba(255,255,255,0.06)} }
+  </style>
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.7/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+<header>
+  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <rect width="24" height="24" rx="6" fill="#001827"></rect>
+    <path d="M6 12h12M12 6v12" stroke="#00d9a3" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <h1>CR911 Threat Matrix</h1>
+    <div style="color:#9fb0c9;font-size:13px">Columns = tactics. Click a technique to open a presentable playbook (Markdown → HTML).</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <input id="q" class="search" placeholder="Filter tactics or techniques..." />
+    <a class="btn" href="index.html">Home</a>
+    <a class="btn" href="playbooks/index.html">Playbooks</a>
+  </div>
+  <div class="matrix-table" id="matrix"></div>
+</div>
+
+<!-- Modal -->
+<div id="backdrop" class="modal-backdrop" role="dialog" aria-hidden="true">
+  <div class="modal" role="document" aria-modal="true">
+    <header>
+      <div>
+        <h2 id="modal-title">Technique Playbook</h2>
+        <div class="subtitle" id="modal-sub"></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="btn-print">Print</button>
+        <a class="btn" id="btn-open-raw" target="_blank" rel="noopener">Open raw</a>
+        <a class="btn" id="btn-download">Download .md</a>
+        <button class="btn" id="closeBtn">Close</button>
+      </div>
+    </header>
+    <div class="content">
+      <div class="playbook-pane"><div id="modal-content" class="prose"></div></div>
+      <aside class="meta-pane">
+        <div class="meta-block"><div class="heading">MITRE Technique</div><div id="mitre-id"></div></div>
+        <div class="meta-block"><div class="heading">Navigator score</div><div id="mitre-score"></div></div>
+        <div class="meta-block"><div class="heading">NG911 note</div><div id="ng911-note"></div></div>
+        <div class="section-title">Mitigations</div><div id="mitigations"></div>
+        <div class="section-title">Affected Elements</div><div id="affected"></div>
+        <div class="section-title">Evidence</div><div id="evidence" style="color:#9fb0c9;font-size:13px"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<footer>CR911 Threat Matrix — <code>ng911_attck_layer.json</code> + legacy <code>mapping.json</code> supply the data shown.</footer>
+
+<script src="assets/cr911.js?v=1" defer></script>
+</body>
+</html>

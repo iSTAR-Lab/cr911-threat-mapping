@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "name": "CR911 Threat Matrix",
+    "version": "2025-09-29",
+    "sources": [
+      { "id": "ThreatModel", "path": "evidence/Updated - NG911 Threat Modeling and Risk Assessment - 4.1.docx" },
+      { "id": "NENA-i3", "path": "evidence/nena-sta-010.3d-2021_i3_stan.pdf" },
+      { "id": "NG-SEC", "path": "evidence/STA-040.2-2024_SecurityforNG.pdf" }
+    ]
+  },
+  "tactics": [
+    {
+      "id": "initial_access",
+      "name": "Initial Access",
+      "description": "Gaining an initial foothold into NG911 or PSAP systems.",
+      "techniques": [
+        {
+          "id": "phishing_workstation",
+          "name": "Phishing → workstation compromise",
+          "description": "Email or chat lures leading to malware on PSAP workstations.",
+          "affected": ["PSAP", "IT_NETWORK"],
+          "mitigations": ["MFA","EDR","phishing_training","segmentation","backups"],
+          "evidence": "See ThreatModel: PSAP phishing & ransomware."
+        },
+        {
+          "id": "supply_chain_component",
+          "name": "Compromised vendor firmware/software",
+          "description": "Malicious update or component from supplier compromises NG components.",
+          "affected": ["ESInet","NGCS","LIS","ESRP"],
+          "mitigations": ["SBOM","vendor-security-checks","version_lifecycle_monitoring","code_signing"],
+          "evidence": "See NG-SEC/ThreatModel: supplier risk."
+        }
+      ]
+    },
+
+    {
+      "id": "spoofing",
+      "name": "Spoofing / Identity Deception",
+      "description": "Impersonation of components or identities.",
+      "techniques": [
+        {
+          "id": "lis_impersonation",
+          "name": "LIS impersonation / fake PIDF-LO",
+          "description": "Attacker presents forged location or LIS identity.",
+          "affected": ["LIS","LVF","ECRF","PSAP"],
+          "mitigations": ["mTLS","JWS_signing","certificate_validation","mutual_authentication","strict_endpoint_whitelists"],
+          "evidence": "ThreatModel: location spoofing / LIS tamper."
+        },
+        {
+          "id": "caller_id_spoof",
+          "name": "Caller ID / SIP identity spoofing (SIP INVITE manipulation)",
+          "description": "SIP/ANI spoof for fraud, swatting, or TDoS amplification.",
+          "affected": ["BCF","ESRP","PSAP"],
+          "mitigations": ["STIR_SHAKEN","BCF_ingress_validation","SIP_HEADER_VALIDATION","rate_limiting"],
+          "evidence": "ThreatModel: caller spoofing; NG-SEC signaling abuse."
+        }
+      ]
+    },
+
+    {
+      "id": "tampering",
+      "name": "Tampering / Data Manipulation",
+      "description": "Corrupting location/routing data or configs.",
+      "techniques": [
+        {
+          "id": "lvf_gis_poison",
+          "name": "LVF / GIS data tampering (poisoning)",
+          "description": "Malicious edits to GIS/LVF datasets yielding bad routing.",
+          "affected": ["LVF","ECRF","PRF"],
+          "mitigations": ["version_management","integrity_checks","access_control","auditing","data_signing"],
+          "evidence": "ThreatModel: GIS/LVF risks."
+        },
+        {
+          "id": "lis_data_tamper",
+          "name": "Location data manipulation or insertion",
+          "description": "Attacker alters caller location records or inserts bogus data.",
+          "affected": ["LIS","ECRF","PSAP"],
+          "mitigations": ["access_control","JWS_location_signatures","LVF_validation","query_rate_limit"],
+          "evidence": "ThreatModel: location-by-value/reference mismatch."
+        }
+      ]
+    },
+
+    {
+      "id": "denial",
+      "name": "Denial / Disruption",
+      "description": "Floods, overloads, or outages degrading service.",
+      "techniques": [
+        {
+          "id": "tdos_sip_flood",
+          "name": "Telephone Denial of Service (TDoS) / SIP flood",
+          "description": "Mass INVITEs/calls overwhelm queues and ESRP/BCF.",
+          "affected": ["BCF","ESRP","PSAP","LPG"],
+          "mitigations": ["rate_limiting","upstream_filtering","call_filtering_tools","scrubbing_services","capacity_planning"],
+          "evidence": "ThreatModel: TDoS."
+        },
+        {
+          "id": "lis_query_flood",
+          "name": "Query flooding (LIS or LVF DoS)",
+          "description": "Abuse of LIS/LVF APIs to exhaust capacity.",
+          "affected": ["LIS","LVF","ECRF"],
+          "mitigations": ["redundancy","rate_limit","input_validation","monitoring"],
+          "evidence": "ThreatModel: DOS on location services."
+        },
+        {
+          "id": "lpg_isolation",
+          "name": "DoS-induced isolation of legacy PSAPs (LPG failure)",
+          "description": "Choking legacy gateways isolates dependent PSAPs.",
+          "affected": ["LPG","LNG","PSAP"],
+          "mitigations": ["redundant_LPGs","secure_config","monitoring","fallback_routes"],
+          "evidence": "ThreatModel: LPG/LNG risks."
+        }
+      ]
+    },
+
+    {
+      "id": "exfiltration",
+      "name": "Collection / Exfiltration",
+      "description": "Stealing sensitive caller/incident data.",
+      "techniques": [
+        {
+          "id": "data_exfil_lis",
+          "name": "Exfiltrate caller location or call logs",
+          "description": "Bulk exports or covert transfers of LIS/PSAP data.",
+          "affected": ["LIS","PSAP_BACKEND","LOGGING_SERVICE"],
+          "mitigations": ["encryption_at_rest","rbac","audit_logging","anomaly_detection"],
+          "evidence": "ThreatModel: sensitive data exposure."
+        }
+      ]
+    },
+
+    {
+      "id": "vuln_exploit",
+      "name": "Vulnerability Exploitation",
+      "description": "Bugs, mispatching, or weak crypto.",
+      "techniques": [
+        {
+          "id": "sw_bugs_esrp",
+          "name": "Exploit software bug in ESRP / ECRF / LIS",
+          "description": "RCE/DoS via unpatched services or bad input handling.",
+          "affected": ["ESRP","ECRF","LIS","LVF"],
+          "mitigations": ["patch_management","secure_code_review","vuln_scanning","runtime_monitoring"],
+          "evidence": "ThreatModel: component bugs."
+        },
+        {
+          "id": "protocol_downgrade",
+          "name": "TLS / protocol downgrade & insecure protocol usage",
+          "description": "Force weak cipher/TLS versions to snoop or meddle.",
+          "affected": ["ALL_ESINET_SERVICES"],
+          "mitigations": ["TLS_1.2+_with_PFS","deprecate_tls10_11","cipher_hardening"],
+          "evidence": "NG-SEC: crypto requirements."
+        }
+      ]
+    },
+
+    {
+      "id": "protocol_interop",
+      "name": "Protocol / Interop Abuse",
+      "description": "Edge conversion & media path abuses.",
+      "techniques": [
+        {
+          "id": "legacy_protocol_injection",
+          "name": "Legacy traffic injection via LNG",
+          "description": "Malformed/hostile legacy signaling passed through LNG.",
+          "affected": ["LNG","LPG","ESInet"],
+          "mitigations": ["protocol_conformance_checks","input_validation","endpoint_whitelist","STIR_SHAKEN_where_applicable"],
+          "evidence": "ThreatModel: LNG/LPG interop."
+        },
+        {
+          "id": "rtp_injection",
+          "name": "Unsecured RTP bridging & media path compromise",
+          "description": "Unauthenticated RTP or no SRTP lets attacker inject/spy.",
+          "affected": ["LPG","PSAP","LOGGING_SERVICE"],
+          "mitigations": ["SRTP","SRTCP","media_encryption","logging_security"],
+          "evidence": "ThreatModel: media path risks."
+        }
+      ]
+    },
+
+    {
+      "id": "insider",
+      "name": "Insider / Misconfiguration",
+      "description": "Human error or malicious insider.",
+      "techniques": [
+        {
+          "id": "misconfig_admin",
+          "name": "Misconfiguration or human error (admin mistake)",
+          "description": "Weak ACLs, bad certs, exposed ports, unsafe defaults.",
+          "affected": ["ALL_FUNCTIONAL_ELEMENTS"],
+          "mitigations": ["configuration_hardening","rbac","change_control","audit_reviews","staff_training"],
+          "evidence": "ThreatModel: misconfig risks."
+        }
+      ]
+    },
+
+    {
+      "id": "impact",
+      "name": "Impact / Ransom / Destruction",
+      "description": "Availability & integrity attacks.",
+      "techniques": [
+        {
+          "id": "ransomware_psap",
+          "name": "Ransomware / malware targeting PSAP",
+          "description": "Encryptors on PSAP workstations/servers crippling ops.",
+          "affected": ["PSAP","PSAP_WORKSTATIONS","IT_NETWORK"],
+          "mitigations": ["segmentation","backups_3_2_1","EDR","offline_backups","incident_response_playbooks"],
+          "evidence": "ThreatModel: PSAP ransomware."
+        }
+      ]
+    }
+  ]
+}

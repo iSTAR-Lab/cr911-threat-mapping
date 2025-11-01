@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "meta",
+    "tactics"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object"
+    },
+    "tactics": {
+      "type": "array"
+    }
+  }
+}

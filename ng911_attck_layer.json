@@ -1,0 +1,346 @@
+{
+  "version": "4.4",
+  "name": "NG911 x MITRE ATT&CK (Techniques mapped to tactics)",
+  "description": "Custom NG911 framework using ATT&CK tactics. Your original techniques are preserved as comments and mapped to ATT&CK technique IDs where possible.\nGenerated on 2025-10-31 22:44:46",
+  "domain": "enterprise-attack",
+  "filters": {
+    "stages": [
+      "act"
+    ],
+    "platforms": [
+      "PRE",
+      "Windows",
+      "Linux",
+      "macOS",
+      "Network"
+    ]
+  },
+  "sorting": 0,
+  "viewMode": 0,
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1566",
+      "tactic": "initial-access",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Phishing \u2192 workstation compromises (PSAP, IT_Network)"
+        }
+      ],
+      "comment": "Phishing \u2192 workstation compromises (PSAP, IT_Network)",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1199",
+      "tactic": "initial-access",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Compromised vendor firmware/software as supply-chain/trusted relationship initial access (ESInet, NGCS, LIS, ESRP)"
+        }
+      ],
+      "comment": "Compromised vendor firmware/software as supply-chain/trusted relationship initial access (ESInet, NGCS, LIS, ESRP)",
+      "score": 90,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1133",
+      "tactic": "initial-access",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Legacy traffic injection via LNG as an ingress path (LNG, LPG, ESInet)"
+        }
+      ],
+      "comment": "Legacy traffic injection via LNG as an ingress path (LNG, LPG, ESInet)",
+      "score": 85,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Exploit public-facing application on edge SBC/ESRP/ECRF/LIS/LVF (alternative ingress)"
+        }
+      ],
+      "comment": "Exploit public-facing application on edge SBC/ESRP/ECRF/LIS/LVF (alternative ingress)",
+      "score": 80,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1036",
+      "tactic": "defense-evasion",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "LIS impersonation / fake PIDF-LO (LIS, LVF, ECRF, PSAP) \u2014 masquerading of identity/attributes"
+        }
+      ],
+      "comment": "LIS impersonation / fake PIDF-LO (LIS, LVF, ECRF, PSAP) \u2014 masquerading of identity/attributes",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1036",
+      "tactic": "defense-evasion",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Caller ID / SIP identity spoofing or SIP INVITE manipulation (BCF, ESRP, PSAP) \u2014 signaling field masquerade"
+        }
+      ],
+      "comment": "Caller ID / SIP identity spoofing or SIP INVITE manipulation (BCF, ESRP, PSAP) \u2014 signaling field masquerade",
+      "score": 90,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1556.006",
+      "tactic": "defense-evasion",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "TLS/protocol downgrade & insecure protocol usage (ALL_ESINET_SERVICES) \u2014 Modify Authentication Process: Protocol Downgrade"
+        }
+      ],
+      "comment": "TLS/protocol downgrade & insecure protocol usage (ALL_ESINET_SERVICES) \u2014 Modify Authentication Process: Protocol Downgrade",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1562",
+      "tactic": "defense-evasion",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Misconfiguration or human error (admin mistake) across elements (ALL_FUNCTIONAL_ELEMENTS) \u2014 Impair Defenses"
+        }
+      ],
+      "comment": "Misconfiguration or human error (admin mistake) across elements (ALL_FUNCTIONAL_ELEMENTS) \u2014 Impair Defenses",
+      "score": 70,
+      "color": "#c62828",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Exploit software bug in ESRP/ECRF/LIS for privilege escalation (ESRP, ECRF, LIS, LVF)"
+        }
+      ],
+      "comment": "Exploit software bug in ESRP/ECRF/LIS for privilege escalation (ESRP, ECRF, LIS, LVF)",
+      "score": 85,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1123",
+      "tactic": "collection",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Unsecured RTP bridging & media path compromise (LPG, PSAP, LOGGING_SERVICE) \u2014 Audio Capture (call media)"
+        }
+      ],
+      "comment": "Unsecured RTP bridging & media path compromise (LPG, PSAP, LOGGING_SERVICE) \u2014 Audio Capture (call media)",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "collection",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Unsecured RTP/media path sniffing \u2014 capture call audio/metadata"
+        }
+      ],
+      "comment": "Unsecured RTP/media path sniffing \u2014 capture call audio/metadata",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Exfiltrate caller location or call logs over existing C2/egress (LIS, PSAP_BACKEND, LOGGING_SERVICE)"
+        }
+      ],
+      "comment": "Exfiltrate caller location or call logs over existing C2/egress (LIS, PSAP_BACKEND, LOGGING_SERVICE)",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Telephone Denial of Service (TDoS) / SIP flood (BCF, ESRP, PSAP, LPG) \u2014 Network DoS"
+        }
+      ],
+      "comment": "Telephone Denial of Service (TDoS) / SIP flood (BCF, ESRP, PSAP, LPG) \u2014 Network DoS",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Query flooding (LIS or LVF DoS) (LIS, LVF, ECRF) \u2014 Network DoS"
+        }
+      ],
+      "comment": "Query flooding (LIS or LVF DoS) (LIS, LVF, ECRF) \u2014 Network DoS",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "DoS-induced isolation of legacy PSAPs (LPG failure) \u2014 Network DoS (availability loss)"
+        }
+      ],
+      "comment": "DoS-induced isolation of legacy PSAPs (LPG failure) \u2014 Network DoS (availability loss)",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1565",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "LVF / GIS data tampering (poisoning) (LVF, ECRF, PRF) \u2014 Data Manipulation"
+        }
+      ],
+      "comment": "LVF / GIS data tampering (poisoning) (LVF, ECRF, PRF) \u2014 Data Manipulation",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1565",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Location data manipulation or insertion (LIS, ECRF, PSAP) \u2014 Data Manipulation"
+        }
+      ],
+      "comment": "Location data manipulation or insertion (LIS, ECRF, PSAP) \u2014 Data Manipulation",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Ransomware / malware targeting PSAP (PSAP, PSAP_Workstation, IT_NETWORK) \u2014 Encrypt Data"
+        }
+      ],
+      "comment": "Ransomware / malware targeting PSAP (PSAP, PSAP_Workstation, IT_NETWORK) \u2014 Encrypt Data",
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1542.003",
+      "tactic": "persistence",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "NG911 Note",
+          "value": "Compromised vendor firmware/software persists in component firmware (Component Firmware)"
+        }
+      ],
+      "comment": "Compromised vendor firmware/software persists in component firmware (Component Firmware)",
+      "score": 90,
+      "color": "#f57c00",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#d1eaff",
+      "#004e98"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "NG911 mapping (high confidence)",
+      "color": "#2e7d32"
+    },
+    {
+      "label": "NG911 mapping (medium confidence)",
+      "color": "#f57c00"
+    },
+    {
+      "label": "NG911 mapping (approximate)",
+      "color": "#c62828"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "Author",
+      "value": "ChatGPT (NG911 mapping)"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#ffffff",
+  "selectTechniquesAcrossTactics": true,
+  "layout": {
+    "layout": "flat",
+    "aggregateFunction": "average",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": false
+  }
+}

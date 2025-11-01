@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CR911 Threat Matrix • NG911/PSAP Threat Mapping</title>
+<style>
+  :root{ --accent:#00d9a3; --muted:#6b7a90; --bg:#0b1020; --card:#0f1529; --text:#e6eef8; }
+  html,body{margin:0;background:linear-gradient(180deg,#071024 0%,#0b1226 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  header{padding:40px 24px 20px;display:flex;align-items:center;gap:16px;max-width:1100px;margin:0 auto}
+  header h1{margin:0;font-size:24px;color:var(--accent)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px 40px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));border-radius:14px;padding:18px 18px 10px;box-shadow:0 6px 18px rgba(2,6,23,.6);margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:900px){ .grid{grid-template-columns:1.3fr .7fr} }
+  a.btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#051a2a;color:#bfefff;text-decoration:none;margin-right:10px;border:1px solid #0b2a3f}
+  a.btn:hover{filter:brightness(1.08)}
+  ul{margin:8px 0 0 18px}
+  .muted{color:var(--muted)}
+  footer{max-width:1100px;margin:0 auto;padding:16px 24px;color:var(--muted);font-size:13px}
+  code{background:#061328;padding:2px 6px;border-radius:6px}
+</style>
+</head>
+<body>
+  <header>
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect width="24" height="24" rx="6" fill="#001827"></rect>
+      <path d="M6 12h12M12 6v12" stroke="#00d9a3" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1>CR911 Threat Matrix — Mapping i3 Threat & Response</h1>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="grid">
+      <section class="card">
+        <h3 style="margin-top:0">Get started</h3>
+        <p>Open the interactive matrix, read the playbooks, or inspect the canonical mapping JSON.</p>
+        <p>
+          <a class="btn" href="cr911-matrix.html">Open Interactive Matrix</a>
+          <a class="btn" href="playbooks/index.html">Browse Playbooks</a>
+          <a class="btn" href="ng911_attck_layer.json">View ng911 ATT&CK layer</a>
+        </p>
+        <p class="muted">Tip: Edit <code>mapping.json</code> in PRs — this site updates instantly on merge.</p>
+      </section>
+
+      <aside class="card">
+        <h3 style="margin-top:0">Repo contents</h3>
+        <ul>
+          <li><code>mapping.json</code> — single source of truth</li>
+          <li><code>cr911-matrix.html</code> — interactive matrix UI</li>
+          <li><code>playbooks/</code> — one playbook per technique</li>
+          <li><code>schema/</code> + <code>ci/</code> — validation in CI</li>
+        </ul>
+      </aside>
+    </div>
+
+    <section class="card">
+      <h3 style="margin-top:0">How to publish as GitHub Pages</h3>
+      <ol>
+        <li>Create a GitHub repo and push this folder.</li>
+        <li>In repo <strong>Settings → Pages</strong>, set <em>Branch</em> to <code>main</code> and <em>Folder</em> to <code>/(root)</code>, then save.</li>
+        <li>Your site will be served at <code>https://USERNAME.github.io/REPO/</code>.</li>
+      </ol>
+      <p class="muted">Optional: add a CI workflow to validate <code>mapping.json</code> on every PR.</p>
+    </section>
+  </div>
+
+  <footer>
+    Sources: NENA i3 (i3), NG-SEC, and internal Threat Modeling. Edit <code>mapping.json</code> to update the framework.
+  </footer>
+</body>
+</html>
