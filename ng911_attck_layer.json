@@ -1,7 +1,7 @@
 {
   "version": "4.4",
-  "name": "NG911 x MITRE ATT&CK (Techniques mapped to tactics)",
-  "description": "Custom NG911 framework using ATT&CK tactics. Your original techniques are preserved as comments and mapped to ATT&CK technique IDs where possible.\nGenerated on 2025-10-31 22:44:46",
+  "name": "CR911 Threat Mapping",
+  "description": "Generated on 2025-10-31 22:44:46",
   "domain": "enterprise-attack",
   "filters": {
     "stages": [
