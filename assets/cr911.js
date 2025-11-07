@@ -1,6 +1,134 @@
 /* CR911 Threat Matrix logic (external; no inline backticks) */
 (function () {
   const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tacticOrder = ['reconnaissance','resource-development','initial-access','execution','persistence','privilege-escalation','defense-evasion','credential-access','discovery','lateral-movement','collection','command-and-control','exfiltration','impact'];
+  const tacticTitleCache = Object.create(null);
+  const tacticLabelOverrides = {
+    'impact': 'Impact / Availability',
+    'collection': 'Collection / Monitoring',
+    'defense-evasion': 'Defense Evasion',
+    'privilege-escalation': 'Privilege Escalation',
+    'initial-access': 'Initial Access',
+    'persistence': 'Persistence',
+    'execution': 'Execution',
+    'exfiltration': 'Exfiltration',
+    'command-and-control': 'Command & Control'
+  };
+  const normalize = str => (str||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  function collectLookupKeys(str){
+    const keys = new Set();
+    if(!str) return keys;
+    const variants = new Set([str]);
+    variants.add(str.replace(/[“”]/g,'"'));
+    variants.add(str.replace(/\b(\w+?)s\b/gi,'$1'));
+    variants.add(str.replace(/\b(\w+?)es\b/gi,'$1'));
+    variants.add(str.replace(/\b(\w+?)ies\b/gi,'$1y'));
+    variants.forEach(variant=>{
+      const norm = normalize(variant);
+      if(norm) keys.add(norm);
+    });
+    return keys;
+  }
+
+  function tacticTitle(id){
+    if(!id) return 'Unmapped';
+    if(tacticTitleCache[id]) return tacticTitleCache[id];
+    const cached = tacticLabelOverrides[id];
+    if(cached){ tacticTitleCache[id] = cached; return cached; }
+    const titled = id.split('-').map(part=>part.charAt(0).toUpperCase()+part.slice(1)).join(' ');
+    tacticTitleCache[id] = titled;
+    return titled;
+  }
+
+  function parseNote(note){
+    if(!note) return {name:'', affected:[]};
+    const match = note.match(/\(([^)]+)\)\s*$/);
+    const affected = match ? match[1].split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const name = match ? note.slice(0, match.index).trim() : note.trim();
+    return {name, affected};
+  }
+
+  function buildLegacyLookup(mapping){
+    const lookup = new Map();
+    if(!mapping) return lookup;
+    (mapping.tactics||[]).forEach(tactic => {
+      (tactic.techniques||[]).forEach(tech => {
+        const value = {tech, tactic};
+        const keys = new Set();
+        collectLookupKeys(tech.name).forEach(k=>keys.add(k));
+        collectLookupKeys(tech.id).forEach(k=>keys.add(k));
+        collectLookupKeys(tech.description).forEach(k=>keys.add(k));
+        keys.forEach(k=>{ if(!lookup.has(k)) lookup.set(k, value); });
+      });
+    });
+    return lookup;
+  }
+
+  function mergeLayer(layer, legacyMapping){
+    const legacyLookup = buildLegacyLookup(legacyMapping);
+    const tacticBuckets = new Map();
+    const addBucket = tacticId => {
+      if(!tacticBuckets.has(tacticId)){
+        tacticBuckets.set(tacticId, {id:tacticId, name:tacticTitle(tacticId), techniques:[]});
+      }
+      return tacticBuckets.get(tacticId);
+    };
+    (layer.techniques||[]).forEach(entry => {
+      const bucket = addBucket(entry.tactic || 'unmapped');
+      const metaEntry = (entry.metadata||[]).find(m=>m.name==='NG911 Note') || (entry.metadata||[])[0];
+      const note = metaEntry ? metaEntry.value : entry.comment || entry.techniqueID;
+      const parsed = parseNote(note);
+      let legacy = null;
+      for(const key of collectLookupKeys(parsed.name)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
+      if(!legacy && entry.comment){
+        for(const key of collectLookupKeys(entry.comment)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
+      }
+      const legacyTech = legacy ? legacy.tech : null;
+      const technique = {
+        id: legacyTech ? legacyTech.id : entry.techniqueID,
+        name: parsed.name || (legacyTech && legacyTech.name) || entry.techniqueID,
+        description: (legacyTech && legacyTech.description) || entry.comment || note,
+        affected: parsed.affected.length ? parsed.affected : ((legacyTech && legacyTech.affected) || []),
+        mitigations: (legacyTech && legacyTech.mitigations) || [],
+        evidence: (legacyTech && legacyTech.evidence) || '',
+        mitreId: entry.techniqueID,
+        ng911Note: note,
+        score: typeof entry.score === 'number' ? entry.score : null,
+        color: entry.color || null,
+        tacticName: bucket.name,
+        tacticId: bucket.id,
+        hasLegacy: !!legacyTech
+      };
+      technique.playbookId = legacyTech ? legacyTech.id : entry.techniqueID;
+      technique.legacyId = legacyTech ? legacyTech.id : null;
+      technique.displayMeta = [
+        technique.mitreId || null,
+        (legacyTech && technique.mitreId !== technique.playbookId) ? ('Playbook ' + technique.playbookId) : null,
+        technique.affected.join(', '),
+        technique.score!=null ? 'Score ' + technique.score : null
+      ]
+        .filter(Boolean)
+        .join(' • ');
+      bucket.techniques.push(technique);
+    });
+
+    const ordered = Array.from(tacticBuckets.values()).sort((a,b)=>{
+      const ai = tacticOrder.indexOf(a.id);
+      const bi = tacticOrder.indexOf(b.id);
+      if(ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if(ai === -1) return 1;
+      if(bi === -1) return -1;
+      return ai - bi;
+    }).map(bucket => ({
+      ...bucket,
+      techniques: bucket.techniques.sort((a,b)=>{
+        if(a.score!=null && b.score!=null && a.score!==b.score) return b.score - a.score;
+        return a.name.localeCompare(b.name);
+      })
+    }));
+
+    return {tactics: ordered};
+  }
 
   function renderMarkdown(md){
     marked.setOptions({ mangle:false, headerIds:true, breaks:false });
@@ -14,8 +142,10 @@
     const lines = [];
     lines.push('# ' + esc(tech.name));
     if(tech.description) lines.push('\n' + esc(tech.description));
+    if(tech.mitreId) lines.push('\n> MITRE ATT&CK mapping: **' + esc(tech.mitreId) + '** → ' + esc(tactic.name));
+    if(tech.ng911Note && tech.ng911Note !== tech.description) lines.push('\n> NG911 context: ' + esc(tech.ng911Note));
     lines.push('\n## Detection & Telemetry');
-    const id=tech.id||''; let sig=[];
+  const id=(tech.playbookId||tech.id||''); let sig=[];
     if(['lis_impersonation','lis_data_tamper','data_exfil_lis'].includes(id))
       sig=['Certificate or signer mismatch for PIDF-LO/location tokens','Unusual LVF revalidations','Location-by-value vs by-reference mismatch','Spikes in LIS queries from atypical clients'];
     else if(['tdos_sip_flood','caller_id_spoof','lis_query_flood'].includes(id))
@@ -46,7 +176,9 @@
 
   function createCell(tech){
     const c=document.createElement('div'); c.className='cell';
-    c.innerHTML='<div class="title">'+esc(tech.name)+'</div><div class="meta">'+esc((tech.affected||[]).join(', '))+'</div>';
+    if(tech.color){ c.style.borderColor = tech.color; c.style.boxShadow = 'inset 0 0 0 1px ' + tech.color + '55'; }
+    const meta = tech.displayMeta || (tech.affected||[]).join(', ');
+    c.innerHTML='<div class="title">'+esc(tech.name)+'</div><div class="meta">'+esc(meta)+'</div>';
     return c;
   }
 
@@ -56,31 +188,40 @@
     const grid=document.createElement('div'); grid.className='cell-grid';
 
     (tactic.techniques||[]).forEach(tech=>{
-      const c=createCell(tech);
-      c.onclick=async function(){
-        const title = tech.name + ' (' + tech.id + ')';
-        document.getElementById('modal-title').textContent = title;
-        document.getElementById('modal-sub').textContent   = 'Tactic: ' + tactic.name;
+  const c=createCell(tech);
+  c.onclick=async function(){
+    const title = tech.name + ' (' + tech.mitreId + ')';
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-sub').textContent   = 'Tactic: ' + tactic.name;
 
-        // Right rail meta
-        const mitig=document.getElementById('mitigations'); mitig.innerHTML='';
-        (tech.mitigations||tech.mitigation||[]).forEach(m=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=m; mitig.appendChild(s); });
-        const aff=document.getElementById('affected'); aff.innerHTML='';
-        (tech.affected||[]).forEach(a=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=a; aff.appendChild(s); });
-        document.getElementById('evidence').textContent = tech.evidence || '(none)';
+    const mitre=document.getElementById('mitre-id');
+    if(mitre){ mitre.textContent = tech.mitreId || tech.id || '(unknown)'; }
+    const scoreEl = document.getElementById('mitre-score');
+    if(scoreEl){ scoreEl.textContent = tech.score!=null ? String(tech.score) : '—'; }
+    const noteEl = document.getElementById('ng911-note');
+    if(noteEl){ noteEl.textContent = tech.ng911Note || tech.description || ''; }
 
-        // Content
-        let md = await loadPlaybookMD(tech.id);
-        if(!md) md = buildPlaybookFromTech(tactic, tech);
-        const html = renderMarkdown(md);
-        const content = document.getElementById('modal-content');
-        content.innerHTML = html; highlightCode();
+    // Right rail meta
+    const mitig=document.getElementById('mitigations'); mitig.innerHTML='';
+    (tech.mitigations||tech.mitigation||[]).forEach(m=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=m; mitig.appendChild(s); });
+    if(!mitig.childElementCount){ const span=document.createElement('span'); span.className='tag muted'; span.textContent='No mapped mitigations'; mitig.appendChild(span); }
+    const aff=document.getElementById('affected'); aff.innerHTML='';
+    (tech.affected||[]).forEach(a=>{ const s=document.createElement('span'); s.className='tag'; s.textContent=a; aff.appendChild(s); });
+    if(!aff.childElementCount){ const span=document.createElement('span'); span.className='tag muted'; span.textContent='No elements extracted'; aff.appendChild(span); }
+    document.getElementById('evidence').textContent = tech.evidence || '(none)';
 
-        // Toolbar links
-        const rawHref = 'playbooks/' + tech.id + '.md';
-        document.getElementById('btn-open-raw').href = rawHref;
-        document.getElementById('btn-download').href = rawHref;
-        document.getElementById('btn-download').setAttribute('download', tech.id + '.md');
+    // Content
+    let md = await loadPlaybookMD(tech.playbookId || tech.id);
+    if(!md) md = buildPlaybookFromTech(tactic, tech);
+    const html = renderMarkdown(md);
+    const content = document.getElementById('modal-content');
+    content.innerHTML = html; highlightCode();
+
+    // Toolbar links
+    const rawHref = 'playbooks/' + tech.playbookId + '.md';
+    document.getElementById('btn-open-raw').href = rawHref;
+    document.getElementById('btn-download').href = rawHref;
+    document.getElementById('btn-download').setAttribute('download', tech.playbookId + '.md');
 
         // Show modal
         const bd=document.getElementById('backdrop'); bd.style.display='flex'; bd.setAttribute('aria-hidden','false');
@@ -112,8 +253,12 @@
   }
 
   async function load(){
-    let mapping={tactics:[]};
-    try{ const r=await fetch('mapping.json',{cache:'no-store'}); mapping=await r.json(); }catch(e){}
+    let legacy={tactics:[]};
+    let layer=null;
+    try{ const r=await fetch('mapping.json',{cache:'no-store'}); if(r.ok) legacy=await r.json(); }catch(e){}
+    try{ const r=await fetch('ng911_attck_layer.json',{cache:'no-store'}); if(r.ok) layer=await r.json(); }catch(e){}
+
+    const mapping = layer ? mergeLayer(layer, legacy) : legacy;
     const matrix=document.getElementById('matrix'); matrix.innerHTML='';
     (mapping.tactics||[]).forEach(t=>matrix.appendChild(createColumn(t)));
 
@@ -124,6 +269,8 @@
         const techs=(t.techniques||[]).filter(tc=>
           (tc.name||'').toLowerCase().includes(qv) ||
           (tc.id||'').toLowerCase().includes(qv) ||
+          (tc.mitreId||'').toLowerCase().includes(qv) ||
+          (tc.ng911Note||'').toLowerCase().includes(qv) ||
           (tc.affected||[]).join(' ').toLowerCase().includes(qv)
         );
         return {name:t.name, techniques:techs};

@@ -2,8 +2,9 @@
 
 Editable CR911 Threat Matrix mapping for NG911 / PSAP security.
 This repo contains:
-- mapping.json : canonical JSON mapping of tactics → techniques → affected i3 functional elements → mitigations
-- cr911.-matrix.html : single-file interactive UI that reads mapping.json
+- ng911_attck_layer.json : ATT&CK Navigator layer describing NG911 techniques mapped to MITRE tactics (primary data source)
+- mapping.json : legacy CR911 tactic → technique structure (still loaded to hydrate mitigations/affected metadata)
+- cr911.-matrix.html : single-file interactive UI that reads the layer + legacy mapping
 - schema/ : JSON Schema for CI validation
 - ci/validate_schema.py : simple schema validation script for CI
 - playbooks/ : sample playbooks exported per technique
@@ -15,7 +16,7 @@ This repo contains:
    ```
    python -m http.server 8000
    ```
-3. Open http://localhost:8000/mitre-cr911.html
+3. Open http://localhost:8000/cr911-matrix.html
 
 ## CI
 - Use `schema/mapping.schema.json` and `ci/validate_schema.py` to validate mapping.json on PRs.

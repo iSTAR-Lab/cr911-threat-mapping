@@ -19,7 +19,7 @@
     .column{min-width:260px;padding:6px;flex:0 0 260px}
     .col-head{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));padding:10px;border-radius:8px;border:1px solid var(--cell-border);font-weight:700;color:var(--accent);font-size:14px;text-align:center}
     .cell-grid{margin-top:8px;display:flex;flex-direction:column;gap:8px}
-    .cell{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:transform .12s,box-shadow .12s}
+  .cell{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:transform .12s,box-shadow .12s}
     .cell:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,0.6)}
     .cell .title{font-weight:600;font-size:13px}
     .cell .meta{font-size:12px;color:#9fb0c9;margin-top:6px}
@@ -33,7 +33,10 @@
     .content{display:grid;grid-template-columns:1fr 260px}
     .playbook-pane{padding:18px 20px;overflow:auto}
     .meta-pane{border-left:1px solid rgba(255,255,255,0.06);padding:18px 16px;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.015))}
-    .tag{display:inline-block;background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:8px;color:#cfe8ff;font-size:12px;margin:6px 6px 0 0}
+  .tag{display:inline-block;background:rgba(255,255,255,0.05);padding:6px 8px;border-radius:8px;color:#cfe8ff;font-size:12px;margin:6px 6px 0 0}
+  .tag.muted{background:rgba(255,255,255,0.02);color:#76859d;border:1px dashed rgba(255,255,255,0.1)}
+  .meta-block{margin-bottom:16px;font-size:13px;color:#b7c7df}
+  .meta-block .heading{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#6f84a3;margin-bottom:4px}
     .prose{line-height:1.6;font-size:15px;color:#e9f4ff}
     .prose pre{background:#0a1f33;border:1px solid rgba(255,255,255,0.06);padding:12px;border-radius:10px;overflow:auto}
     footer{max-width:1200px;margin:20px auto 60px;padding:0 20px;color:#9fb0c9;font-size:13px}
@@ -83,6 +86,9 @@
     <div class="content">
       <div class="playbook-pane"><div id="modal-content" class="prose"></div></div>
       <aside class="meta-pane">
+        <div class="meta-block"><div class="heading">MITRE Technique</div><div id="mitre-id"></div></div>
+        <div class="meta-block"><div class="heading">Navigator score</div><div id="mitre-score"></div></div>
+        <div class="meta-block"><div class="heading">NG911 note</div><div id="ng911-note"></div></div>
         <div class="section-title">Mitigations</div><div id="mitigations"></div>
         <div class="section-title">Affected Elements</div><div id="affected"></div>
         <div class="section-title">Evidence</div><div id="evidence" style="color:#9fb0c9;font-size:13px"></div>
@@ -91,7 +97,7 @@
   </div>
 </div>
 
-<footer>CR911 Threat Matrix — <code>mapping.json</code> is the single source of truth.</footer>
+<footer>CR911 Threat Matrix — <code>ng911_attck_layer.json</code> + legacy <code>mapping.json</code> supply the data shown.</footer>
 
 <script src="assets/cr911.js?v=1" defer></script>
 </body>

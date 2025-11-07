@@ -36,6 +36,116 @@
 const qs = new URLSearchParams(location.search);
 const id = qs.get('id') || '';
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const normalize = str => (str||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+const tacticOrder = ['reconnaissance','resource-development','initial-access','execution','persistence','privilege-escalation','defense-evasion','credential-access','discovery','lateral-movement','collection','command-and-control','exfiltration','impact'];
+const tacticTitleCache = Object.create(null);
+const tacticLabelOverrides = {
+  'impact': 'Impact / Availability',
+  'collection': 'Collection / Monitoring',
+  'defense-evasion': 'Defense Evasion',
+  'privilege-escalation': 'Privilege Escalation',
+  'initial-access': 'Initial Access',
+  'persistence': 'Persistence',
+  'execution': 'Execution',
+  'exfiltration': 'Exfiltration',
+  'command-and-control': 'Command & Control'
+};
+const tacticTitle = id => {
+  if(!id) return 'Unmapped';
+  if(tacticTitleCache[id]) return tacticTitleCache[id];
+  const fromMap = tacticLabelOverrides[id];
+  if(fromMap){ tacticTitleCache[id] = fromMap; return fromMap; }
+  const titled = id.split('-').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+  tacticTitleCache[id] = titled;
+  return titled;
+};
+function collectLookupKeys(str){
+  const keys = new Set();
+  if(!str) return keys;
+  const variants = new Set([str]);
+  variants.add(str.replace(/[“”]/g,'"'));
+  variants.add(str.replace(/\b(\w+?)s\b/gi,'$1'));
+  variants.add(str.replace(/\b(\w+?)es\b/gi,'$1'));
+  variants.add(str.replace(/\b(\w+?)ies\b/gi,'$1y'));
+  variants.forEach(variant=>{
+    const norm = normalize(variant);
+    if(norm) keys.add(norm);
+  });
+  return keys;
+}
+function parseNote(note){
+  if(!note) return {name:'', affected:[]};
+  const match = note.match(/\(([^)]+)\)\s*$/);
+  const affected = match ? match[1].split(',').map(s=>s.trim()).filter(Boolean) : [];
+  const name = match ? note.slice(0, match.index).trim() : note.trim();
+  return {name, affected};
+}
+function buildLegacyLookup(mapping){
+  const lookup = new Map();
+  (mapping.tactics||[]).forEach(t=>{
+    (t.techniques||[]).forEach(tc=>{
+      const value = {tech:tc, tactic:t};
+      const keys = new Set();
+      collectLookupKeys(tc.name).forEach(k=>keys.add(k));
+      collectLookupKeys(tc.id).forEach(k=>keys.add(k));
+      collectLookupKeys(tc.description).forEach(k=>keys.add(k));
+      keys.forEach(k=>{ if(!lookup.has(k)) lookup.set(k,value); });
+    });
+  });
+  return lookup;
+}
+function mergeLayer(layer, legacyMapping){
+  const legacyLookup = buildLegacyLookup(legacyMapping||{});
+  const tacticBuckets = new Map();
+  const addBucket = tacticId => {
+    if(!tacticBuckets.has(tacticId)){
+      tacticBuckets.set(tacticId, {id:tacticId, name:tacticTitle(tacticId), techniques:[]});
+    }
+    return tacticBuckets.get(tacticId);
+  };
+  (layer.techniques||[]).forEach(entry=>{
+    const bucket = addBucket(entry.tactic || 'unmapped');
+    const metaEntry = (entry.metadata||[]).find(m=>m.name==='NG911 Note') || (entry.metadata||[])[0];
+    const note = metaEntry ? metaEntry.value : entry.comment || entry.techniqueID;
+    const parsed = parseNote(note);
+    let legacy = null;
+    for(const key of collectLookupKeys(parsed.name)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
+    if(!legacy && entry.comment){
+      for(const key of collectLookupKeys(entry.comment)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
+    }
+    const legacyTech = legacy ? legacy.tech : null;
+    const technique = {
+      id: legacyTech ? legacyTech.id : entry.techniqueID,
+      name: parsed.name || (legacyTech && legacyTech.name) || entry.techniqueID,
+      description: (legacyTech && legacyTech.description) || entry.comment || note,
+      affected: parsed.affected.length ? parsed.affected : ((legacyTech && legacyTech.affected) || []),
+      mitigations: (legacyTech && legacyTech.mitigations) || [],
+      evidence: (legacyTech && legacyTech.evidence) || '',
+      mitreId: entry.techniqueID,
+      ng911Note: note,
+      score: typeof entry.score === 'number' ? entry.score : null,
+      playbookId: legacyTech ? legacyTech.id : entry.techniqueID,
+      legacyId: legacyTech ? legacyTech.id : null,
+      hasLegacy: !!legacyTech
+    };
+    bucket.techniques.push(technique);
+  });
+  const ordered = Array.from(tacticBuckets.values()).sort((a,b)=>{
+    const ai = tacticOrder.indexOf(a.id);
+    const bi = tacticOrder.indexOf(b.id);
+    if(ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+    if(ai === -1) return 1;
+    if(bi === -1) return -1;
+    return ai - bi;
+  }).map(bucket => ({
+    ...bucket,
+    techniques: bucket.techniques.sort((a,b)=>{
+      if(a.score!=null && b.score!=null && a.score!==b.score) return b.score - a.score;
+      return a.name.localeCompare(b.name);
+    })
+  }));
+  return {tactics: ordered};
+}
 
 function renderMarkdown(md){
   marked.setOptions({ mangle:false, headerIds:true, breaks:false });
@@ -47,32 +157,75 @@ function highlightCode(){ try{ hljs.highlightAll(); }catch(e){} }
 function buildPlaybookFromTech(tactic, tech){
   const lines = [];
   lines.push('# ' + esc(tech.name));
-  if(tech.description) lines.push('\\n' + esc(tech.description));
-  lines.push('\\n## Detection & Telemetry\\n- See CR911 Matrix guidance.');
-  lines.push('\\n## Response\\n- Contain, eradicate, recover per CR911 runbooks.');
-  return lines.join('\\n');
+  if(tech.description) lines.push('\n' + esc(tech.description));
+  if(tech.mitreId) lines.push('\n> MITRE ATT&CK mapping: **' + esc(tech.mitreId) + '** → ' + esc(tactic.name));
+  if(tech.ng911Note && tech.ng911Note !== tech.description) lines.push('\n> NG911 context: ' + esc(tech.ng911Note));
+  lines.push('\n## Detection & Telemetry');
+  const idVal = tech.playbookId || tech.id || '';
+  let sig=[];
+  if(['lis_impersonation','lis_data_tamper','data_exfil_lis'].includes(idVal))
+    sig=['Certificate or signer mismatch for PIDF-LO/location tokens','Unusual LVF revalidations','Location-by-value vs by-reference mismatch','Spikes in LIS queries from atypical clients'];
+  else if(['tdos_sip_flood','caller_id_spoof','lis_query_flood'].includes(idVal))
+    sig=['SIP INVITE surges from few IPs','ESRP errors & PSAP queue spikes','BCF rate-limit counters firing','Invalid STIR/SHAKEN attestations'];
+  else if(['lvf_gis_poison'].includes(idVal))
+    sig=['LVF validation failures after updates','GIS hash/version drift','Unauthorized LVF/GIS writes'];
+  else if(['legacy_protocol_injection','rtp_injection'].includes(idVal))
+    sig=['LNG/LPG protocol conformance violations','RTP/SRTP negotiation anomalies','Unexpected SDP/codec attributes'];
+  else if(['sw_bugs_esrp','protocol_downgrade'].includes(idVal))
+    sig=['ESRP/ECRF/LIS crashes/restarts','TLS downgrades','IDS/WAF CVE hits'];
+  else if(['phishing_workstation','ransomware_psap','misconfig_admin','supply_chain_component'].includes(idVal))
+    sig=['Suspicious processes on PSAP hosts','EDR ransomware indicators','Privileged changes outside window','Unexpected vendor updates'];
+  else
+    sig=['Anomalous auth/config or request patterns','Error/latency/throughput anomalies'];
+  lines.push(sig.map(s=>'- '+s).join('\n'));
+  lines.push('\n## Triage\n- Scope affected elements and paths\n- Compare 24h vs 7d\n- Validate certs/IDs/rates/schema');
+  lines.push('\n## Containment\n- Block/rate-limit at BCF\n- Quarantine & failover\n- Disable creds; rotate keys');
+  lines.push('\n## Eradication\n- Patch/reconfigure\n- Rebuild if integrity uncertain\n- Restore validated LVF/GIS');
+  lines.push('\n## Recovery\n- Reintroduce traffic under monitoring\n- Verify origination→BCF→ESRP→ECRF/LVF→PSAP\n- Post-incident review');
+  lines.push('\n## Metrics/KPIs\n- MTTD, MTTC, MTTR\n- False positives\n- % endpoints with mTLS/STIR-SHAKEN');
+  return lines.join('\n');
 }
 
 (async ()=>{
-  const mapping = await (await fetch('../mapping.json',{cache:'no-store'})).json();
-  let tactic=null, tech=null;
-  for(const t of (mapping.tactics||[])){ for(const tc of (t.techniques||[])){ if(tc.id===id){ tactic=t; tech=tc; break; } } if(tech) break; }
-  if(!tech){ document.getElementById('title').textContent='Not found'; return; }
+  let legacy={tactics:[]};
+  let layer=null;
+  try{ const r=await fetch('../mapping.json',{cache:'no-store'}); if(r.ok) legacy=await r.json(); }catch(e){}
+  try{ const r=await fetch('../ng911_attck_layer.json',{cache:'no-store'}); if(r.ok) layer=await r.json(); }catch(e){}
+  if(!layer && !(legacy.tactics||[]).length){ document.getElementById('title').textContent='Layer not available'; return; }
 
-  const title = tech.name + ' (' + tech.id + ')';
+  const mapping = layer ? mergeLayer(layer, legacy) : {tactics: legacy.tactics||[]};
+  const entries = [];
+  (mapping.tactics||[]).forEach(tactic=>{
+    (tactic.techniques||[]).forEach(tech=>entries.push({tech, tactic}));
+  });
+
+  const match = entries.find(({tech})=>{
+    const playbookId = tech.playbookId || tech.id;
+    return (playbookId && playbookId === id) || (tech.mitreId && tech.mitreId === id) || (tech.id && tech.id === id);
+  });
+  if(!match){ document.getElementById('title').textContent='Not found'; return; }
+
+  const {tech, tactic} = match;
+  const title = tech.name + ' (' + (tech.mitreId || tech.id || id) + ')';
   document.getElementById('title').textContent = title;
-  document.getElementById('meta').textContent  = 'Tactic: ' + tactic.name;
+  const playbookId = tech.playbookId || tech.id || id;
+  const metaBits = ['Tactic: ' + tactic.name];
+  if(tech.mitreId && playbookId && tech.mitreId !== playbookId) metaBits.push('Playbook: ' + playbookId);
+  document.getElementById('meta').textContent = metaBits.join(' • ');
 
   let md = null;
-  try{ const r=await fetch(id + '.md', {cache:'no-store'}); if(r.ok) md = await r.text(); }catch(e){}
-  if(!md) md = buildPlaybookFromTech(tactic, tech);
+  try{ const r=await fetch(playbookId + '.md', {cache:'no-store'}); if(r.ok) md = await r.text(); }catch(e){}
+  if(!md){
+    md = buildPlaybookFromTech(tactic, tech);
+  }
 
   const html = renderMarkdown(md);
   const cont = document.getElementById('content');
   cont.innerHTML = html; highlightCode();
 
-  document.getElementById('openRaw').href = id + '.md';
-  document.getElementById('download').href = id + '.md'; document.getElementById('download').download = id + '.md';
+  document.getElementById('openRaw').href = playbookId + '.md';
+  document.getElementById('download').href = playbookId + '.md';
+  document.getElementById('download').download = playbookId + '.md';
 
   document.getElementById('print').onclick = ()=>{
     var safeHTML = html.replace(/<\/script/gi,'<\\/script');
