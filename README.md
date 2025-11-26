@@ -1,27 +1,47 @@
-# CR911 Threat Mapping
+# CyRECS911 Threat-Mapping Workflow
+### *Cyber Resilient Emergency Communication Systems*
+A structured approach for mapping threats across emergency-service operations.
 
-Editable CR911 Threat Matrix mapping for NG911 / PSAP security.
-This repo contains:
-- ng911_attck_layer.json : ATT&CK Navigator layer describing NG911 techniques mapped to MITRE tactics (primary data source)
-- mapping.json : legacy CR911 tactic → technique structure (still loaded to hydrate mitigations/affected metadata)
-- cr911.-matrix.html : single-file interactive UI that reads the layer + legacy mapping
-- schema/ : JSON Schema for CI validation
-- ci/validate_schema.py : simple schema validation script for CI
-- playbooks/ : sample playbooks exported per technique
-- evidence/ : place source PDF/DOCX files here (sensitive files should be kept internal)
+This repository provides an editable, modular threat-mapping workflow tailored for emergency-communications environments (PSAPs, ESInets, CAD, SBCs, radio systems, location infrastructures, etc.).
+CyRECS911 enables analysts, engineers, and responders to visualize, classify, and document cyber threats across operational layers with consistency and repeatability.
 
-## Quickstart (local)
-1. Place the evidence files in `evidence/` (if available).
-2. Start a local HTTP server:
-   ```
-   python -m http.server 8000
-   ```
-3. Open http://localhost:8000/cr911-matrix.html
+## Repository Structure
 
-## CI
-- Use `schema/mapping.schema.json` and `ci/validate_schema.py` to validate mapping.json on PRs.
+```
+playbooks/           # Atomic threat playbooks describing cyber scenarios
+schema/              # JSON schema for CI validation of playbooks
+ci/validate_schema   # CI workflow for ensuring playbook correctness
+view.html            # Rendered matrix / UI view of the threat landscape
+```
 
-## How to edit
-- Edit `mapping.json` and open the HTML to immediately view changes.
-- Follow PR process: validate schema, add evidence pointers when adding techniques.
+## Playbooks
 
+Each playbook captures:
+
+- Scenario description
+- Assets/components affected
+- Attack steps
+- Detection opportunities
+- Mitigation strategies
+- Operational impact (PSAP, call flow, ESInet routing, radio, CAD, etc.)
+
+Your existing playbooks will continue to render automatically in `view.html` when validated through the schema.
+
+## Validation
+
+All playbooks adhere to `schema/mapping.schema.json`.
+Use the existing CI workflow or run the validator locally:
+
+```bash
+python ci/validate_schema.py playbooks/
+```
+
+## Purpose of CyRECS911
+
+CyRECS911 provides a unified methodology for:
+
+- Threat mapping across multi-agency emergency services
+- Identifying mission-impact pathways
+- Standardizing cybersecurity documentation for ESInet/NG911 ecosystems
+- Supporting training, exercises, and tabletop scenarios
+- Integrating cyber resilience into call-handling and dispatch workflows
