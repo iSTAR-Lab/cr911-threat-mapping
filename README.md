@@ -45,3 +45,6 @@ CyRECS911 provides a unified methodology for:
 - Standardizing cybersecurity documentation for ESInet/NG911 ecosystems
 - Supporting training, exercises, and tabletop scenarios
 - Integrating cyber resilience into call-handling and dispatch workflows
+
+**Funding & Acknowledgment:**  
+This project is funded by the U.S. Department of Homeland Security (DHS) and implemented by the iSTAR Lab at Texas A&M University.
