@@ -1,7 +1,7 @@
 {
   "version": "4.4",
-  "name": "CyRECS911 Threat Mapping (Attack Techniques → Details → Playbooks)",
-  "description": "Layer file that highlights attack techniques and provides drill-down metadata (attack-focused). Generated on 2026-01-14.",
+  "name": "CyRECS911 — Attack Technique Layer (Attack-first)",
+  "description": "Matrix shows technique names. Clicking a technique shows attack-focused details (technical description, mechanics, impacts, sources). Playbooks are linked separately.",
   "domain": "enterprise-attack",
   "filters": {
     "stages": ["act"],
@@ -10,253 +10,256 @@
   "sorting": 0,
   "viewMode": 0,
   "hideDisabled": false,
+
   "techniques": [
     {
       "techniqueID": "T1566",
       "tactic": "initial-access",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-IA-01" },
-        { "name": "Attack Focus", "value": "Initial foothold via phishing leading to PSAP workstation compromise." },
-        { "name": "Targets", "value": "PSAP_WORKSTATIONS; IT_NETWORK; PSAP apps" },
-        { "name": "Attack Mechanics", "value": "Phishing lure → payload/credential capture → remote access tooling → lateral movement opportunities." }
-      ],
-      "comment": "CR-IA-01 — Phishing-driven workstation compromise used to gain an initial foothold in PSAP/IT networks.",
       "score": 100,
       "color": "#2e7d32",
-      "showSubtechniques": false
+      "showSubtechniques": false,
+      "comment": "PSAP Workstation Compromise via Phishing",
+      "metadata": [
+        { "name": "CyRECS ID", "value": "CR-IA-01" },
+        { "name": "Display Name", "value": "Phishing → PSAP workstation compromise" },
+
+        { "name": "Attack Overview", "value": "Malware enters PSAP environments through phishing emails or infected files (including media), enabling disruption of call-handling and possible ransomware outcomes." },
+        { "name": "How it works", "value": "User interaction (email/chat lure) → payload execution or credential capture → access to PSAP workstation and adjacent IT network → disruption/leakage or staging for encryption." },
+        { "name": "Affected elements", "value": "PSAP; PSAP_WORKSTATIONS; IT_NETWORK" },
+        { "name": "Operational impact", "value": "Disrupt call-handling systems, leak sensitive information, and raise ransomware risk that can force manual operations." },
+
+        { "name": "Source extracts", "value": "ThreatModel: Malware can enter through phishing emails or infected files (images/videos), disrupting call systems or leaking information; ransomware can lock 911/dispatch systems and has forced call-takers to revert to pen and paper in real incidents." },
+        { "name": "Sources", "value": "ThreatModel §6.2.9 PSAP (malware/ransomware)" },
+
+        { "name": "Playbook", "value": null }
+      ]
     },
 
     {
       "techniqueID": "T1199",
       "tactic": "initial-access",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-IA-02" },
-        { "name": "Attack Focus", "value": "Trusted supplier relationship abused to introduce malicious software/firmware into NG911 components." },
-        { "name": "Targets", "value": "ESInet; NGCS; BCF; ESRP; ECRF; LIS; LVF" },
-        { "name": "Attack Mechanics", "value": "Trojanized updates/components → privileged execution within functional elements → persistent control and integrity risk." }
-      ],
-      "comment": "CR-IA-02 — Compromised vendor software/firmware delivered through trusted update channels into NG911 functional elements.",
       "score": 90,
       "color": "#f57c00",
-      "showSubtechniques": false
+      "showSubtechniques": false,
+      "comment": "Compromised Vendor Software/Firmware in NG911 Components",
+      "metadata": [
+        { "name": "CyRECS ID", "value": "CR-IA-02" },
+        { "name": "Display Name", "value": "Supply chain compromise → malicious vendor component/update" },
+
+        { "name": "Attack Overview", "value": "A trusted supplier update/component introduces adversary code into NG911 functional elements." },
+        { "name": "How it works", "value": "Compromised build/update pipeline or trojanized component → signed/accepted distribution → privileged execution inside operational boundary." },
+        { "name": "Affected elements", "value": "ESInet; NGCS; BCF; ESRP; ECRF; LIS; LVF; PSAP_BACKEND" },
+        { "name": "Operational impact", "value": "Stealthy persistence, integrity compromise in routing/location paths, and multi-site disruption potential." },
+
+        { "name": "Source extracts", "value": "ThreatModel/NG-SEC: supplier risk can compromise NG components." },
+        { "name": "Sources", "value": "ThreatModel; NG-SEC (supplier/assurance guidance)" },
+
+        { "name": "Playbook", "value": null }
+      ]
     },
 
     {
       "techniqueID": "T1133",
       "tactic": "initial-access",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-IA-03" },
-        { "name": "Attack Focus", "value": "Legacy ingress via protocol conversion path into ESInet service plane." },
-        { "name": "Targets", "value": "LNG; LPG; ESInet" },
-        { "name": "Attack Mechanics", "value": "Crafted/hostile legacy signaling reaches LNG → translated onward → parsing/interop edge cases exploited." },
-        { "name": "Related Playbook", "value": "playbooks/legacy_protocol_injection.md" }
-      ],
-      "comment": "CR-IA-03 — Legacy ingress through LNG/LPG conversion path to inject hostile signaling into NG911 workflows.",
       "score": 85,
       "color": "#f57c00",
-      "showSubtechniques": false
-    },
-
-    {
-      "techniqueID": "T1190",
-      "tactic": "initial-access",
-      "enabled": true,
+      "showSubtechniques": false,
+      "comment": "Legacy Traffic Injection via LNG (Protocol Conversion Path)",
       "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-IA-04 (optional/extension)" },
-        { "name": "Attack Focus", "value": "Public-facing service exploitation on edge or externally reachable components." },
-        { "name": "Targets", "value": "BCF/SBC; ESRP; ECRF; LIS; LVF (if exposed/misconfigured)" },
-        { "name": "Attack Mechanics", "value": "Exploit exposed service endpoints to gain execution, disrupt service, or steal data depending on weakness." }
-      ],
-      "comment": "CR-IA-04 — Exploitation of exposed services on edge NG911 components (only when publicly reachable/misconfigured).",
-      "score": 80,
-      "color": "#f57c00",
-      "showSubtechniques": false
+        { "name": "CyRECS ID", "value": "CR-IA-03" },
+        { "name": "Display Name", "value": "Legacy traffic injection via LNG/LPG protocol conversion" },
+
+        { "name": "Attack Overview", "value": "Malformed or spoofed legacy signaling is translated into SIP and carried into NG911 paths when gateway controls are insufficient." },
+        { "name": "How it works", "value": "Crafted/ambiguous legacy call signals → LNG translation into SIP → misinterpretation/edge cases → dropped/misrouted calls or injection of fake calls into ESInet." },
+        { "name": "Affected elements", "value": "LNG; LPG; ESInet" },
+        { "name": "Operational impact", "value": "Dropped or misrouted emergency calls; injected fake calls can overload services and reduce trust." },
+
+        { "name": "Source extracts", "value": "ThreatModel: LNG protocol conversion can be disrupted by malformed signals, causing calls to be dropped/misrouted; legacy side may lack authentication allowing spoofed signaling and fake call injection into ESInet." },
+        { "name": "Sources", "value": "ThreatModel §6.2.7 LNG (protocol conversion + injection)" },
+
+        { "name": "Playbook", "value": "playbooks/legacy_protocol_injection.md" }
+      ]
     },
 
     {
       "techniqueID": "T1036",
       "tactic": "defense-evasion",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Techniques", "value": "CR-ID-01; CR-ID-02" },
-        { "name": "Attack Focus", "value": "Identity and trust-assertion manipulation used to misrepresent caller/service identity." },
-        { "name": "Targets", "value": "BCF; ESRP; PSAP; LIS; LVF; ECRF" },
-        { "name": "Attack Mechanics", "value": "CR-ID-01: SIP identity/ANI spoofing via INVITE header manipulation. CR-ID-02: LIS impersonation and forged PIDF-LO/location assertions." },
-        { "name": "Related Playbooks", "value": "playbooks/caller_id_spoof.md; playbooks/lis_impersonation.md" }
-      ],
-      "comment": "CR-ID-01/02 — Identity manipulation: SIP caller identity spoofing and LIS impersonation/forged location assertions.",
       "score": 95,
       "color": "#f57c00",
-      "showSubtechniques": false
+      "showSubtechniques": false,
+      "comment": "Identity Manipulation (Caller Identity Spoofing + LIS Impersonation)",
+      "metadata": [
+        { "name": "CyRECS IDs", "value": "CR-ID-01; CR-ID-02" },
+        { "name": "Display Name", "value": "Identity manipulation (caller spoofing, service/location impersonation)" },
+
+        { "name": "Attack Overview", "value": "Adversary manipulates identity and trust assertions to misroute calls, bypass routing policy, or inject false attribution/location." },
+        { "name": "How it works", "value": "CR-ID-01: Manipulate SIP identity-related headers to spoof caller identity and evade basic filters. CR-ID-02: Present forged LIS identity or fake PIDF-LO/location assertions to influence validation/routing/dispatch." },
+        { "name": "Affected elements", "value": "BCF; ESRP; PSAP; LIS; LVF; ECRF" },
+        { "name": "Operational impact", "value": "Swatting/misrouting, false metadata bypassing policy filters, increased call taker load, and potential public safety harm." },
+
+        { "name": "Source extracts", "value": "ThreatModel: SIP signaling can be spoofed leading to misrouting/interception and metadata manipulation; call spoofing at scale can saturate queues and delay real calls." },
+        { "name": "Sources", "value": "ThreatModel §6.2.6 ESRP (spoofing/interception); §6.2.5 PRF (metadata spoofing/overload)" },
+
+        { "name": "Playbooks", "value": "playbooks/caller_id_spoof.md; playbooks/lis_impersonation.md" }
+      ]
     },
 
     {
       "techniqueID": "T1556.006",
       "tactic": "defense-evasion",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-PA-01" },
-        { "name": "Attack Focus", "value": "Transport security weakened via downgrade/negotiation manipulation when configurations allow it." },
-        { "name": "Targets", "value": "ALL_ESINET_SERVICES" },
-        { "name": "Attack Mechanics", "value": "Handshake/negotiation pressure → weak TLS/cipher selection (where misconfigured) → interception/modification opportunities." }
-      ],
-      "comment": "CR-PA-01 — Protocol downgrade/weak negotiation exposure enabling interception or manipulation on ESInet services.",
       "score": 100,
       "color": "#2e7d32",
-      "showSubtechniques": false
-    },
-
-    {
-      "techniqueID": "T1068",
-      "tactic": "privilege-escalation",
-      "enabled": true,
+      "showSubtechniques": false,
+      "comment": "Transport Security Weakening via Downgrade/Negotiation Abuse",
       "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-VE-01 (bug exploitation)" },
-        { "name": "Attack Focus", "value": "Software weakness exploitation in routing/location services to gain elevated execution or trigger failures." },
-        { "name": "Targets", "value": "ESRP; ECRF; LIS; LVF" },
-        { "name": "Attack Mechanics", "value": "Malformed inputs or unpatched weaknesses → remote code execution or privilege gain (varies by component)." }
-      ],
-      "comment": "CR-VE-01 — Exploit software weaknesses in core NG911 services for elevated execution or destabilization.",
-      "score": 85,
-      "color": "#f57c00",
-      "showSubtechniques": false
-    },
+        { "name": "CyRECS ID", "value": "CR-PA-01" },
+        { "name": "Display Name", "value": "Transport downgrade / weak negotiation on service interfaces" },
 
-    {
-      "techniqueID": "T1040",
-      "tactic": "collection",
-      "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-PA-02" },
-        { "name": "Attack Focus", "value": "Capture call media/metadata where media segments are unprotected." },
-        { "name": "Targets", "value": "Media paths touching LPG; PSAP; logging/recording segments" },
-        { "name": "Attack Mechanics", "value": "Sniff unencrypted media segments or weakly protected links to capture audio/metadata." }
-      ],
-      "comment": "CR-PA-02 — Media path observation: call media/metadata capture on unprotected segments.",
-      "score": 100,
-      "color": "#2e7d32",
-      "showSubtechniques": false
-    },
+        { "name": "Attack Overview", "value": "Where configurations allow, adversaries exploit weak protocol negotiation to increase interception/modification opportunities." },
+        { "name": "How it works", "value": "Exploit inconsistent endpoint configurations → force weaker negotiation or insecure fallback → traffic observation/manipulation opportunities." },
+        { "name": "Affected elements", "value": "ALL_ESINET_SERVICES" },
+        { "name": "Operational impact", "value": "Confidentiality loss of call metadata/location and increased integrity risks to routing queries." },
 
-    {
-      "techniqueID": "T1123",
-      "tactic": "collection",
-      "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-PA-02" },
-        { "name": "Attack Focus", "value": "Call audio capture through compromised media bridging or recording points." },
-        { "name": "Targets", "value": "LPG; PSAP; LOGGING_SERVICE" },
-        { "name": "Attack Mechanics", "value": "RTP/SRTP negotiation abuse or insecure bridging → inject/spy on call audio." }
-      ],
-      "comment": "CR-PA-02 — Media path compromise: capture/inject call audio through insecure bridging or negotiation weaknesses.",
-      "score": 100,
-      "color": "#2e7d32",
-      "showSubtechniques": false
-    },
+        { "name": "Source extracts", "value": "ThreatModel notes signaling spoofing/MITM risks when strong authentication/transport protections are weak or inconsistently applied." },
+        { "name": "Sources", "value": "ThreatModel §6.2.6 ESRP (signaling spoofing/MITM discussion); NG-SEC (transport expectations)" },
 
-    {
-      "techniqueID": "T1041",
-      "tactic": "exfiltration",
-      "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-CO-01" },
-        { "name": "Attack Focus", "value": "Transfer of collected sensitive datasets (location, call logs) out of the environment." },
-        { "name": "Targets", "value": "LIS; PSAP_BACKEND; LOGGING_SERVICE" },
-        { "name": "Attack Mechanics", "value": "Bulk export/scrape → staging → outbound transfer using available egress paths." },
-        { "name": "Related Playbook", "value": "playbooks/data_exfil_lis.md" }
-      ],
-      "comment": "CR-CO-01 — Exfiltration of sensitive caller location/call-log datasets from LIS/PSAP/logging stores.",
-      "score": 100,
-      "color": "#2e7d32",
-      "showSubtechniques": false
+        { "name": "Playbook", "value": null }
+      ]
     },
 
     {
       "techniqueID": "T1498",
       "tactic": "impact",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Techniques", "value": "CR-SD-01; CR-SD-02; CR-SD-03" },
-        { "name": "Attack Focus", "value": "Service disruption via signaling floods, query exhaustion, and induced gateway isolation." },
-        { "name": "Targets", "value": "BCF; ESRP; PSAP; LPG; LNG; LIS; LVF; ECRF" },
-        { "name": "Attack Mechanics", "value": "CR-SD-01: SIP INVITE/call floods (TDoS). CR-SD-02: LIS/LVF/ECRF query floods. CR-SD-03: LPG/LNG induced isolation affecting legacy-dependent PSAPs." }
-      ],
-      "comment": "CR-SD-01/02/03 — Disruption via floods/exhaustion: signaling overload, location/query service exhaustion, and gateway isolation.",
       "score": 100,
       "color": "#2e7d32",
-      "showSubtechniques": false
+      "showSubtechniques": false,
+      "comment": "Service Disruption: SIP Floods + Query Floods + Legacy Isolation",
+      "metadata": [
+        { "name": "CyRECS IDs", "value": "CR-SD-01; CR-SD-02; CR-SD-03" },
+        { "name": "Display Name", "value": "Service disruption (call floods, query exhaustion, legacy PSAP isolation)" },
+
+        { "name": "Attack Overview", "value": "Availability degradation through high-volume call setup floods, exhaustion of location/validation services, and gateway disruption isolating legacy PSAPs." },
+        { "name": "How it works", "value": "CR-SD-01: Flood centers with fake calls (auto-dialers/botnets; multiple media types). CR-SD-02: Flood LIS/LVF/ECRF queries to exhaust capacity. CR-SD-03: DoS/misconfig at LPG isolates PSAPs still depending on gateways." },
+        { "name": "Affected elements", "value": "BCF; ESRP; PSAP; LIS; LVF; ECRF; LPG; LNG" },
+        { "name": "Operational impact", "value": "Calls delayed/dropped; legitimate emergency callers blocked; legacy call centers become unreachable in affected regions." },
+
+        { "name": "Source extracts", "value": "ThreatModel: TDoS floods with fake calls prevent legitimate calls, potentially across multiple channels. ESRP can be overloaded by SIP-based call flooding, delaying or crashing routing decisions. LPG failure can isolate legacy PSAPs and prevent emergency calls from reaching responders." },
+        { "name": "Sources", "value": "ThreatModel §6.2.9 PSAP (TDoS); §6.2.6 ESRP (SIP-based flooding); §6.2.8 LPG (DoS isolation)" },
+
+        { "name": "Playbook", "value": null }
+      ]
     },
 
     {
       "techniqueID": "T1565",
       "tactic": "impact",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Techniques", "value": "CR-DM-01; CR-DM-02" },
-        { "name": "Attack Focus", "value": "Integrity attacks against routing/location data inputs that influence validation and dispatch outcomes." },
-        { "name": "Targets", "value": "LVF; ECRF; PRF; LIS; PSAP" },
-        { "name": "Attack Mechanics", "value": "CR-DM-01: GIS/LVF dataset poisoning. CR-DM-02: LIS location record tampering/insertion; location-by-value/reference inconsistencies." },
-        { "name": "Related Playbook", "value": "playbooks/lis_data_tamper.md" }
-      ],
-      "comment": "CR-DM-01/02 — Data manipulation affecting validation/routing: GIS/LVF poisoning and LIS location tampering/insertion.",
       "score": 100,
       "color": "#2e7d32",
-      "showSubtechniques": false
+      "showSubtechniques": false,
+      "comment": "Data Integrity Attacks: GIS/LVF Poisoning + LIS Location Tampering",
+      "metadata": [
+        { "name": "CyRECS IDs", "value": "CR-DM-01; CR-DM-02" },
+        { "name": "Display Name", "value": "Data manipulation (routing/location integrity compromise)" },
+
+        { "name": "Attack Overview", "value": "Integrity attacks targeting routing/location inputs used for validation, policy decisions, and dispatch outcomes." },
+        { "name": "How it works", "value": "CR-DM-01: Poison GIS/LVF datasets to yield incorrect routing/validation. CR-DM-02: Alter or insert LIS location records, creating inconsistent location results and misrouting." },
+        { "name": "Affected elements", "value": "LVF; ECRF; PRF; LIS; PSAP" },
+        { "name": "Operational impact", "value": "Incorrect jurisdiction selection, misrouting, delayed dispatch, and repeated revalidation cycles increasing call-handling latency." },
+
+        { "name": "Source extracts", "value": "ThreatModel: policy/routing rule tampering can misdirect or drop calls; metadata spoofing can bypass filters and overwhelm PSAPs." },
+        { "name": "Sources", "value": "ThreatModel §6.2.5 PRF (metadata spoofing; routing policy tampering)" },
+
+        { "name": "Playbook", "value": "playbooks/lis_data_tamper.md" }
+      ]
+    },
+
+    {
+      "techniqueID": "T1123",
+      "tactic": "collection",
+      "enabled": true,
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false,
+      "comment": "Media Path Compromise / Audio Capture via Insecure Bridging",
+      "metadata": [
+        { "name": "CyRECS ID", "value": "CR-PA-02" },
+        { "name": "Display Name", "value": "Call media interception/injection at bridging points" },
+
+        { "name": "Attack Overview", "value": "Call audio/text/video can be intercepted or injected when bridging between IP media and legacy analog paths is insecure." },
+        { "name": "How it works", "value": "Exploit unsecured RTP relays/bridges → eavesdrop or inject false audio/media into emergency calls." },
+        { "name": "Affected elements", "value": "LPG; PSAP; LOGGING_SERVICE" },
+        { "name": "Operational impact", "value": "Privacy compromise and misinformation risk; altered audio can mislead response decisions or delay response." },
+
+        { "name": "Source extracts", "value": "ThreatModel: LPG bridges RTP and analog voice; if not secured, attackers may intercept or inject media, leading to privacy issues and misinformed response decisions." },
+        { "name": "Sources", "value": "ThreatModel §6.2.8 LPG (RTP bridging compromise)" },
+
+        { "name": "Playbook", "value": null }
+      ]
+    },
+
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "enabled": true,
+      "score": 100,
+      "color": "#2e7d32",
+      "showSubtechniques": false,
+      "comment": "Exfiltrate Caller Location / Call Logs",
+      "metadata": [
+        { "name": "CyRECS ID", "value": "CR-CO-01" },
+        { "name": "Display Name", "value": "Exfiltrate caller location or call logs" },
+
+        { "name": "Attack Overview", "value": "Sensitive datasets (location, call records, incident logs) are exported or harvested and moved out of the environment." },
+        { "name": "How it works", "value": "Harvest/aggregate from LIS/PSAP/logging → stage internally → covert outbound transfer through available egress." },
+        { "name": "Affected elements", "value": "LIS; PSAP_BACKEND; LOGGING_SERVICE" },
+        { "name": "Operational impact", "value": "Privacy violations, operational security exposure, potential targeting of callers and responders." },
+
+        { "name": "Source extracts", "value": "ThreatModel: PSAPs handle highly sensitive data; unauthorized access can lead to theft/misuse and broad consequences due to interconnected design." },
+        { "name": "Sources", "value": "ThreatModel §6.2.9 PSAP (unauthorized access/data breaches)" },
+
+        { "name": "Playbook", "value": "playbooks/data_exfil_lis.md" }
+      ]
     },
 
     {
       "techniqueID": "T1486",
       "tactic": "impact",
       "enabled": true,
-      "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-IM-01" },
-        { "name": "Attack Focus", "value": "Operational paralysis through encryption/destruction of PSAP endpoints and support systems." },
-        { "name": "Targets", "value": "PSAP; PSAP_WORKSTATIONS; IT_NETWORK" },
-        { "name": "Attack Mechanics", "value": "Encrypt endpoints/servers; disrupt CAD/dispatch support; tamper with recovery paths to prolong downtime." }
-      ],
-      "comment": "CR-IM-01 — Ransomware impacting PSAP workstations/support servers causing severe operational disruption.",
       "score": 100,
       "color": "#2e7d32",
-      "showSubtechniques": false
-    },
-
-    {
-      "techniqueID": "T1562",
-      "tactic": "defense-evasion",
-      "enabled": true,
+      "showSubtechniques": false,
+      "comment": "Ransomware / Malware Targeting PSAP",
       "metadata": [
-        { "name": "CyRECS Technique", "value": "CR-MC-01 (misconfiguration/misuse)" },
-        { "name": "Attack Focus", "value": "Configuration and administrative weaknesses that reduce protective posture and widen attack paths." },
-        { "name": "Targets", "value": "ALL_FUNCTIONAL_ELEMENTS" },
-        { "name": "Attack Mechanics", "value": "Weak ACLs, exposed services, unsafe defaults, certificate and trust misconfiguration enabling follow-on attacks." }
-      ],
-      "comment": "CR-MC-01 — Misconfiguration and administrative weaknesses that widen access and reduce protective posture across NG911 elements.",
-      "score": 70,
-      "color": "#c62828",
-      "showSubtechniques": false
+        { "name": "CyRECS ID", "value": "CR-IM-01" },
+        { "name": "Display Name", "value": "Ransomware targeting PSAP operations" },
+
+        { "name": "Attack Overview", "value": "Encryption or disruption of PSAP workstations/servers halts dispatch/call-taking operations and forces manual fallback." },
+        { "name": "How it works", "value": "Initial infection (often via phishing/media files) → spread across PSAP IT systems → encryption/lockout → disruption of 911 and dispatch tooling." },
+        { "name": "Affected elements", "value": "PSAP; PSAP_WORKSTATIONS; IT_NETWORK" },
+        { "name": "Operational impact", "value": "Severe service interruption; manual operations; delayed response; reputational and public trust impact." },
+
+        { "name": "Source extracts", "value": "ThreatModel: ransomware can lock down 911/dispatch systems; real incidents forced call-takers to revert to pen and paper." },
+        { "name": "Sources", "value": "ThreatModel §6.2.9 PSAP (malware/ransomware impact)" },
+
+        { "name": "Playbook", "value": null }
+      ]
     }
   ],
 
-  "gradient": {
-    "colors": ["#d1eaff", "#004e98"],
-    "minValue": 0,
-    "maxValue": 100
-  },
   "legendItems": [
     { "label": "High confidence mapping", "color": "#2e7d32" },
-    { "label": "Medium confidence mapping", "color": "#f57c00" },
-    { "label": "Approximate mapping", "color": "#c62828" }
+    { "label": "Medium confidence mapping", "color": "#f57c00" }
   ],
   "metadata": [
-    { "name": "Author", "value": "CyRECS911 (attack-focused mapping layer)" },
-    { "name": "Usage", "value": "Select a technique to view attack details; follow metadata links to related playbooks for response actions." }
+    { "name": "Presentation", "value": "Tiles should show Display Name; clicking opens attack details. Playbooks are accessed via the Playbook field/link." }
   ],
-  "showTacticRowBackground": false,
-  "tacticRowBackground": "#ffffff",
-  "selectTechniquesAcrossTactics": true,
   "layout": {
     "layout": "flat",
     "aggregateFunction": "average",
