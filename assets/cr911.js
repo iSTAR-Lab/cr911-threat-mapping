@@ -1,10 +1,9 @@
 /* CyRECS911 Matrix — attack-first + playbook links (no legacy merge)
-   - Removes score from UI (tiles + modal)
-   - Keeps color styling
-   - Builds Playbooks index from ng911_attck_layer.json (names, not IDs)
+   FIX: Playbook links resolve to actual /playbooks/*.md filenames (not CR-IDs)
+   UI: No score displayed; colors retained
 */
 (function () {
-  console.log("[CyRECS911] assets/cr911.js loaded v4");
+  console.log("[CyRECS911] assets/cr911.js loaded v5");
 
   const esc = (s) =>
     String(s || "")
@@ -15,6 +14,36 @@
   const inPlaybooksFolder = () => window.location.pathname.includes("/playbooks/");
   const layerPath = () => (inPlaybooksFolder() ? "../ng911_attck_layer.json" : "ng911_attck_layer.json");
   const playbooksBase = () => (inPlaybooksFolder() ? "" : "playbooks/");
+
+  // ✅ IMPORTANT: map CyRECS IDs -> repo playbook filenames (without .md)
+  // These must match your /playbooks/*.md filenames exactly.
+  const playbookIdByCyrecs = {
+    "CR-IA-01": "phishing_workstation",
+    "CR-IA-02": "supply_chain_component",
+    "CR-IA-03": "legacy_protocol_injection",
+
+    "CR-ID-01": "caller_id_spoof",
+    "CR-ID-02": "lis_impersonation",
+
+    "CR-PA-01": "protocol_downgrade",
+    "CR-PA-02": "rtp_injection",
+
+    "CR-CO-01": "data_exfil_lis",
+
+    "CR-DM-01": "lvf_gis_poison",
+    "CR-DM-02": "lis_data_tamper",
+
+    "CR-SD-01": "tdos_sip_flood",
+    "CR-SD-03": "lpg_isolation",
+
+    "CR-IM-01": "ransomware_psap",
+
+    "CR-VE-01": "sw_bugs_esrp",
+    "CR-MC-01": "misconfig_admin",
+
+    // You have this playbook file too; hook it up when you add a technique for it:
+    // "CR-??-??": "lis_query_flood"
+  };
 
   const tacticOrder = [
     "reconnaissance",
@@ -83,12 +112,25 @@
     try { hljs.highlightAll(); } catch (e) {}
   }
 
-  function playbookIdFromMetaValue(v) {
+  function normalizePlaybookId(v) {
+    // Accept: "file.md" or "playbooks/file.md" or "file"
     let s = String(v || "").trim();
     if (!s) return null;
     s = s.replace(/^playbooks\//, "");
     s = s.replace(/\.md$/i, "");
     return s || null;
+  }
+
+  function resolvePlaybookId(meta, cyrecsId) {
+    // 1) If ng911_attck_layer.json has a direct filename, use it
+    const direct = normalizePlaybookId(meta["Playbook"] || meta["Playbooks"] || "");
+    if (direct && direct !== cyrecsId) return direct;
+
+    // 2) Otherwise map from CyRECS ID -> repo filename
+    if (cyrecsId && playbookIdByCyrecs[cyrecsId]) return playbookIdByCyrecs[cyrecsId];
+
+    // 3) Nothing found
+    return null;
   }
 
   function playbookMdPath(pbId) {
@@ -98,19 +140,20 @@
 
   function playbookViewUrl(pbId) {
     if (!pbId) return null;
-    // from root -> playbooks/view.html
-    // from /playbooks -> view.html
-    return playbooksBase() + "view.html?pb=" + encodeURIComponent(pbId);
+    return playbooksBase() + "view.html?id=" + encodeURIComponent(pbId);
   }
 
   function normalizeTechniqueFromLayer(entry) {
     const meta = metaToObject(entry.metadata || []);
-    const cyid = meta["CyRECS ID"] || "";
+
+    const cyrecsId = meta["CyRECS ID"] || meta["CyRECS IDs"] || "";
     const name = meta["Display Name"] || entry.comment || entry.techniqueID || "Unnamed technique";
-    const pbId = playbookIdFromMetaValue(meta["Playbook"] || "");
+
+    // ✅ resolved to actual playbook filename like "legacy_protocol_injection"
+    const pbId = resolvePlaybookId(meta, cyrecsId);
 
     const technique = {
-      cyrecsId: cyid || null,
+      cyrecsId: cyrecsId || null,
       techniqueID: entry.techniqueID || null,
       tacticId: entry.tactic || "unmapped",
       tacticName: tacticTitle(entry.tactic || "unmapped"),
@@ -130,14 +173,8 @@
       }
     };
 
-    // ✅ Removed score entirely from tile sub-line
-    technique.displayMeta = [
-      technique.cyrecsId ? technique.cyrecsId : null,
-      technique.techniqueID ? technique.techniqueID : null
-    ]
-      .filter(Boolean)
-      .join(" • ");
-
+    // ✅ no score
+    technique.displayMeta = [technique.cyrecsId, technique.techniqueID].filter(Boolean).join(" • ");
     return technique;
   }
 
@@ -161,7 +198,6 @@
       return ai - bi;
     });
 
-    // Sort techniques alphabetically (stable + clean)
     ordered.forEach((bucket) => {
       bucket.techniques.sort((x, y) => (x.name || "").localeCompare(y.name || ""));
     });
@@ -180,6 +216,7 @@
       return;
     }
 
+    // Keep label consistent with your view.html UI
     openRaw.textContent = "Open Playbook";
     openRaw.href = tech.playbookView;
     openRaw.style.display = "inline-flex";
@@ -193,7 +230,7 @@
     const c = document.createElement("div");
     c.className = "cell";
 
-    // ✅ keep colors
+    // Keep colors
     if (tech.color) {
       c.style.borderColor = tech.color;
       c.style.boxShadow = "inset 0 0 0 1px " + tech.color + "55";
@@ -233,14 +270,14 @@
         document.getElementById("modal-title").textContent = tech.name;
         document.getElementById("modal-sub").textContent = "Tactic: " + tactic.name;
 
-        // Right rail: Technique ID
         const idEl = document.getElementById("id");
         if (idEl) idEl.textContent = tech.cyrecsId || tech.techniqueID || "—";
 
-        // ✅ Hide the “Navigator score” block (and never set it)
+        // Hide score block if it exists in HTML
         const scoreEl = document.getElementById("score");
-        if (scoreEl && scoreEl.closest(".meta-block")) {
-          scoreEl.closest(".meta-block").style.display = "none";
+        if (scoreEl) {
+          const block = scoreEl.closest(".meta-block");
+          if (block) block.style.display = "none";
         }
 
         const noteEl = document.getElementById("ng911-note");
@@ -275,7 +312,6 @@
           mitig.appendChild(span);
         }
 
-        // Main content (attack-first)
         const parts = [];
         parts.push(`**Technique:** ${esc(tech.name)}`);
         parts.push(`**Identifiers:** ${esc([tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ") || "—")}`);
@@ -295,33 +331,6 @@
         const bd = document.getElementById("backdrop");
         bd.style.display = "flex";
         bd.setAttribute("aria-hidden", "false");
-
-        const printBtn = document.getElementById("btn-print");
-        if (printBtn) {
-          printBtn.onclick = function () {
-            const safeHTML = html.replace(/<\/script/gi, "<\\/script");
-            const headHtml =
-              `<html><head><meta charset="utf-8"><title>${esc(tech.name)}</title>` +
-              `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">` +
-              `<style>body{font-family:Inter,system-ui,Arial;padding:24px;background:#fff;color:#111}` +
-              `h1,h2,h3{margin:12px 0 6px}pre{border:1px solid #ddd;padding:12px;border-radius:8px;overflow:auto;background:#0a1f33;color:#e6eef8}` +
-              `.meta{margin:8px 0 16px;color:#444;font-size:12px}</style></head><body>`;
-
-            const bodyHtml =
-              `<h1>${esc(tech.name)}</h1>` +
-              `<div class="meta">Tactic: ${esc(tactic.name)}</div>` +
-              safeHTML +
-              `<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"><\\/script>` +
-              `<script>try{hljs.highlightAll()}catch(e){}<\\/script>` +
-              `</body></html>`;
-
-            const w = window.open("", "_blank");
-            w.document.open();
-            w.document.write(headHtml + bodyHtml);
-            w.document.close();
-            setTimeout(() => w.print(), 300);
-          };
-        }
       };
 
       grid.appendChild(cell);
@@ -339,12 +348,12 @@
     return null;
   }
 
+  // If playbooks/index.html has pb-index, this builds it
   function buildPlaybooksIndex(mapping) {
     const listRoot = document.getElementById("pb-index");
     if (!listRoot) return;
 
     listRoot.innerHTML = "";
-
     (mapping.tactics || []).forEach((t) => {
       const section = document.createElement("div");
       section.className = "pb-section";
@@ -361,9 +370,7 @@
         const li = document.createElement("li");
         li.className = "pb-item";
 
-        // ✅ show NAME, not CR-ID
-        const label = tech.name;
-
+        const label = tech.name; // show names
         const meta = [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ");
 
         if (tech.playbookView) {
@@ -375,7 +382,8 @@
         } else {
           li.innerHTML =
             `<span class="pb-a muted">${esc(label)}</span>` +
-            `<span class="pb-meta">${esc(meta)}</span>`;
+            `<span class="pb-meta">${esc(meta)}</span>` +
+            ` <span class="pb-meta muted">(no playbook)</span>`;
         }
 
         ul.appendChild(li);
@@ -395,8 +403,6 @@
         matrix.innerHTML =
           '<div style="padding:16px;color:#9fb0c9">Error: ng911_attck_layer.json not found or invalid.</div>';
       }
-      const pb = document.getElementById("pb-index");
-      if (pb) pb.innerHTML = '<div class="muted">Error loading layer data.</div>';
       return;
     }
 
@@ -408,10 +414,9 @@
       (mapping.tactics || []).forEach((t) => matrix.appendChild(createColumn(t)));
     }
 
-    // Playbooks page auto-index
     buildPlaybooksIndex(mapping);
 
-    // Search (matrix page)
+    // Search
     const q = document.getElementById("q");
     if (q && matrix) {
       q.oninput = function () {
