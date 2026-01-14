@@ -1,6 +1,6 @@
 {
   "version": "4.4",
-  "name": "CyRECS911 — Attack Technique Layer (Attack-first)",
+  "name": "CyRECS911 — Attack Technique Layer",
   "description": "Matrix shows technique names. Clicking a technique shows attack-focused details (technical description, mechanics, impacts, sources). Playbooks are linked separately.",
   "domain": "enterprise-attack",
   "filters": {
