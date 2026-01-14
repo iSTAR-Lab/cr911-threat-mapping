@@ -1,6 +1,6 @@
 {
   "meta": {
-    "name": "CyRECS911 Attack Matrix (ATT&CK-style)",
+    "name": "CyRECS911 Attack Matrix",
     "version": "2026-01-14",
     "schema": "cyrecs911.attack-matrix.v1",
     "principles": [
