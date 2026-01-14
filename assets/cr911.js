@@ -1,12 +1,20 @@
-/* CyRECS911 Matrix — attack-first + playbook links (no legacy merge) */
+/* CyRECS911 Matrix — attack-first + playbook links (no legacy merge)
+   - Removes score from UI (tiles + modal)
+   - Keeps color styling
+   - Builds Playbooks index from ng911_attck_layer.json (names, not IDs)
+*/
 (function () {
-  console.log("[CyRECS911] assets/cr911.js loaded (attack + playbook links) v3");
+  console.log("[CyRECS911] assets/cr911.js loaded v4");
 
   const esc = (s) =>
     String(s || "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+
+  const inPlaybooksFolder = () => window.location.pathname.includes("/playbooks/");
+  const layerPath = () => (inPlaybooksFolder() ? "../ng911_attck_layer.json" : "ng911_attck_layer.json");
+  const playbooksBase = () => (inPlaybooksFolder() ? "" : "playbooks/");
 
   const tacticOrder = [
     "reconnaissance",
@@ -72,13 +80,10 @@
   }
 
   function highlightCode() {
-    try {
-      hljs.highlightAll();
-    } catch (e) {}
+    try { hljs.highlightAll(); } catch (e) {}
   }
 
   function playbookIdFromMetaValue(v) {
-    // Accept: "CR-IA-01.md" or "playbooks/CR-IA-01.md" or "CR-IA-01"
     let s = String(v || "").trim();
     if (!s) return null;
     s = s.replace(/^playbooks\//, "");
@@ -88,20 +93,20 @@
 
   function playbookMdPath(pbId) {
     if (!pbId) return null;
-    return "playbooks/" + pbId + ".md";
+    return playbooksBase() + pbId + ".md";
   }
 
   function playbookViewUrl(pbId) {
     if (!pbId) return null;
-    return "playbooks/view.html?pb=" + encodeURIComponent(pbId);
+    // from root -> playbooks/view.html
+    // from /playbooks -> view.html
+    return playbooksBase() + "view.html?pb=" + encodeURIComponent(pbId);
   }
 
   function normalizeTechniqueFromLayer(entry) {
     const meta = metaToObject(entry.metadata || []);
-
     const cyid = meta["CyRECS ID"] || "";
     const name = meta["Display Name"] || entry.comment || entry.techniqueID || "Unnamed technique";
-
     const pbId = playbookIdFromMetaValue(meta["Playbook"] || "");
 
     const technique = {
@@ -110,7 +115,6 @@
       tacticId: entry.tactic || "unmapped",
       tacticName: tacticTitle(entry.tactic || "unmapped"),
       name,
-      score: typeof entry.score === "number" ? entry.score : null,
       color: entry.color || null,
 
       playbookId: pbId,
@@ -126,10 +130,10 @@
       }
     };
 
+    // ✅ Removed score entirely from tile sub-line
     technique.displayMeta = [
       technique.cyrecsId ? technique.cyrecsId : null,
-      technique.techniqueID ? technique.techniqueID : null,
-      technique.score != null ? "Score " + technique.score : null
+      technique.techniqueID ? technique.techniqueID : null
     ]
       .filter(Boolean)
       .join(" • ");
@@ -157,11 +161,9 @@
       return ai - bi;
     });
 
+    // Sort techniques alphabetically (stable + clean)
     ordered.forEach((bucket) => {
-      bucket.techniques.sort((x, y) => {
-        if (x.score != null && y.score != null && x.score !== y.score) return y.score - x.score;
-        return (x.name || "").localeCompare(y.name || "");
-      });
+      bucket.techniques.sort((x, y) => (x.name || "").localeCompare(y.name || ""));
     });
 
     return { tactics: ordered };
@@ -178,12 +180,10 @@
       return;
     }
 
-    // “Open raw” becomes “Open Playbook” (rendered page)
     openRaw.textContent = "Open Playbook";
     openRaw.href = tech.playbookView;
     openRaw.style.display = "inline-flex";
 
-    // Download still downloads the .md
     download.href = tech.playbookMd;
     download.style.display = "inline-flex";
     download.setAttribute("download", tech.playbookId + ".md");
@@ -193,6 +193,7 @@
     const c = document.createElement("div");
     c.className = "cell";
 
+    // ✅ keep colors
     if (tech.color) {
       c.style.borderColor = tech.color;
       c.style.boxShadow = "inset 0 0 0 1px " + tech.color + "55";
@@ -207,7 +208,6 @@
       `<div class="meta">${esc(tech.displayMeta || "")}</div>` +
       `<div style="margin-top:8px;font-size:12px">${pbLink}</div>`;
 
-    // Make the playbook link clickable without triggering the modal
     const a = c.querySelector("a.pb-link");
     if (a) a.addEventListener("click", (ev) => ev.stopPropagation());
 
@@ -233,17 +233,19 @@
         document.getElementById("modal-title").textContent = tech.name;
         document.getElementById("modal-sub").textContent = "Tactic: " + tactic.name;
 
-        // Right-rail fields (these IDs exist in the current HTML)
+        // Right rail: Technique ID
         const idEl = document.getElementById("id");
         if (idEl) idEl.textContent = tech.cyrecsId || tech.techniqueID || "—";
 
+        // ✅ Hide the “Navigator score” block (and never set it)
         const scoreEl = document.getElementById("score");
-        if (scoreEl) scoreEl.textContent = tech.score != null ? String(tech.score) : "—";
+        if (scoreEl && scoreEl.closest(".meta-block")) {
+          scoreEl.closest(".meta-block").style.display = "none";
+        }
 
         const noteEl = document.getElementById("ng911-note");
         if (noteEl) noteEl.textContent = tech.attack.overview || "";
 
-        // Affected tags
         const aff = document.getElementById("affected");
         if (aff) {
           aff.innerHTML = "";
@@ -261,11 +263,9 @@
           }
         }
 
-        // Evidence box in right rail
         const evidenceEl = document.getElementById("evidence");
         if (evidenceEl) evidenceEl.textContent = tech.attack.sources || "(none)";
 
-        // We intentionally keep mitigations empty here (playbook handles response)
         const mitig = document.getElementById("mitigations");
         if (mitig) {
           mitig.innerHTML = "";
@@ -275,21 +275,14 @@
           mitig.appendChild(span);
         }
 
-        // Modal main content (attack-first)
+        // Main content (attack-first)
         const parts = [];
         parts.push(`**Technique:** ${esc(tech.name)}`);
-        if (tech.cyrecsId || tech.techniqueID) {
-          parts.push(
-            `**Identifiers:** ${esc(
-              [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ")
-            )}`
-          );
-        }
+        parts.push(`**Identifiers:** ${esc([tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ") || "—")}`);
 
         if (tech.attack.overview) parts.push("## Attack Overview\n" + tech.attack.overview);
         if (tech.attack.mechanics) parts.push("## How the Attack Works\n" + tech.attack.mechanics);
         if (tech.attack.impact) parts.push("## Operational Impact\n" + tech.attack.impact);
-
         if (tech.attack.sources) parts.push("## Sources\n" + tech.attack.sources);
 
         const html = renderMarkdown(parts.join("\n\n"));
@@ -297,15 +290,12 @@
         content.innerHTML = html;
         highlightCode();
 
-        // Playbook buttons
         setPlaybookButtons(tech);
 
-        // Show modal
         const bd = document.getElementById("backdrop");
         bd.style.display = "flex";
         bd.setAttribute("aria-hidden", "false");
 
-        // Print button prints attack page (not playbook)
         const printBtn = document.getElementById("btn-print");
         if (printBtn) {
           printBtn.onclick = function () {
@@ -349,12 +339,10 @@
     return null;
   }
 
-  // Build presentable master playbook list on Playbooks page
   function buildPlaybooksIndex(mapping) {
     const listRoot = document.getElementById("pb-index");
     if (!listRoot) return;
 
-    // Clear
     listRoot.innerHTML = "";
 
     (mapping.tactics || []).forEach((t) => {
@@ -373,23 +361,21 @@
         const li = document.createElement("li");
         li.className = "pb-item";
 
-        // Prefer showing the human technique name
-        const label = `${tech.name}`;
+        // ✅ show NAME, not CR-ID
+        const label = tech.name;
+
+        const meta = [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ");
 
         if (tech.playbookView) {
           li.innerHTML =
             `<a href="${esc(tech.playbookView)}" class="pb-a">` +
             `${esc(label)}` +
             `</a>` +
-            `<span class="pb-meta">${esc(
-              [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ")
-            )}</span>`;
+            `<span class="pb-meta">${esc(meta)}</span>`;
         } else {
           li.innerHTML =
             `<span class="pb-a muted">${esc(label)}</span>` +
-            `<span class="pb-meta">${esc(
-              [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ")
-            )}</span>`;
+            `<span class="pb-meta">${esc(meta)}</span>`;
         }
 
         ul.appendChild(li);
@@ -401,14 +387,16 @@
   }
 
   async function load() {
-    const layer = await loadJSON("ng911_attck_layer.json");
+    const layer = await loadJSON(layerPath());
     if (!layer || !Array.isArray(layer.techniques)) {
-      console.error("[CyRECS911] ng911_attck_layer.json missing or invalid.");
+      console.error("[CyRECS911] layer missing/invalid:", layerPath());
       const matrix = document.getElementById("matrix");
       if (matrix) {
         matrix.innerHTML =
           '<div style="padding:16px;color:#9fb0c9">Error: ng911_attck_layer.json not found or invalid.</div>';
       }
+      const pb = document.getElementById("pb-index");
+      if (pb) pb.innerHTML = '<div class="muted">Error loading layer data.</div>';
       return;
     }
 
@@ -420,10 +408,10 @@
       (mapping.tactics || []).forEach((t) => matrix.appendChild(createColumn(t)));
     }
 
-    // If we are on the Playbooks page, auto-build a clean index
+    // Playbooks page auto-index
     buildPlaybooksIndex(mapping);
 
-    // Search support (matrix page)
+    // Search (matrix page)
     const q = document.getElementById("q");
     if (q && matrix) {
       q.oninput = function () {

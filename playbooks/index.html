@@ -9,117 +9,171 @@
   body{margin:0;background:linear-gradient(180deg,#071024 0%,#0b1226 100%);color:#e6eef8;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
   .wrap{max-width:900px;margin:0 auto;padding:28px 20px}
   a{color:#bfefff;text-decoration:none}
+  a:hover{text-decoration:underline}
   .muted{color:#9fb0c9}
   .card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.02));border-radius:14px;padding:18px;box-shadow:0 6px 18px rgba(2,6,23,.6);margin-bottom:16px}
-  ul{padding-left:18px}
+  .section{margin:14px 0 18px}
+  .section h3{margin:0 0 10px;font-size:16px}
+  ul{padding-left:18px;margin:0}
+  li{margin:8px 0}
+  .meta{display:inline-block;margin-left:10px;font-size:12px;color:#9fb0c9}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1 style="color:#00d9a3;margin:0 0 8px">CR911 Playbooks</h1>
   <div class="muted">Click a technique to view its rendered playbook.</div>
-  <div class="card"><ul id="list"></ul></div>
+
+  <div class="card" id="pb-root">
+    <div class="muted">Loading playbooks…</div>
+  </div>
+
   <p><a href="../cr911-matrix.html">← Back to Matrix</a></p>
 </div>
+
 <script>
-const normalize = str => (str||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-const tacticOrder = ['reconnaissance','resource-development','initial-access','execution','persistence','privilege-escalation','defense-evasion','credential-access','discovery','lateral-movement','collection','command-and-control','exfiltration','impact'];
-const tacticTitle = id => id ? id.split('-').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ') : 'Unmapped';
-function collectLookupKeys(str){
-  const keys = new Set();
-  if(!str) return keys;
-  const variants = new Set([str]);
-  variants.add(str.replace(/[“”]/g,'"'));
-  variants.add(str.replace(/\b(\w+?)s\b/gi,'$1'));
-  variants.add(str.replace(/\b(\w+?)es\b/gi,'$1'));
-  variants.add(str.replace(/\b(\w+?)ies\b/gi,'$1y'));
-  variants.forEach(variant=>{
-    const norm = normalize(variant);
-    if(norm) keys.add(norm);
-  });
-  return keys;
-}
-function parseNote(note){
-  if(!note) return {name:'', affected:[]};
-  const match = note.match(/\(([^)]+)\)\s*$/);
-  const affected = match ? match[1].split(',').map(s=>s.trim()).filter(Boolean) : [];
-  const name = match ? note.slice(0, match.index).trim() : note.trim();
-  return {name, affected};
-}
-function buildLegacyLookup(mapping){
-  const lookup = new Map();
-  (mapping.tactics||[]).forEach(t=>{
-    (t.techniques||[]).forEach(tc=>{
-      const value = {tech:tc, tactic:t};
-      const keys = new Set();
-      collectLookupKeys(tc.name).forEach(k=>keys.add(k));
-      collectLookupKeys(tc.id).forEach(k=>keys.add(k));
-      collectLookupKeys(tc.description).forEach(k=>keys.add(k));
-      keys.forEach(k=>{ if(!lookup.has(k)) lookup.set(k, value); });
-    });
-  });
-  return lookup;
-}
-function mergeLayer(layer, legacy){
-  const legacyLookup = buildLegacyLookup(legacy||{});
-  const buckets = new Map();
-  (layer.techniques||[]).forEach(entry=>{
-    const tacticId = entry.tactic || 'unmapped';
-    if(!buckets.has(tacticId)) buckets.set(tacticId, {id:tacticId, name:tacticTitle(tacticId), techniques:[]});
-    const bucket = buckets.get(tacticId);
-    const metaEntry = (entry.metadata||[]).find(m=>m.name==='NG911 Note') || (entry.metadata||[])[0];
-    const note = metaEntry ? metaEntry.value : entry.comment || entry.techniqueID;
-    const parsed = parseNote(note);
-    let legacy = null;
-    for(const key of collectLookupKeys(parsed.name)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
-    if(!legacy && entry.comment){
-      for(const key of collectLookupKeys(entry.comment)){ if(legacyLookup.has(key)){ legacy = legacyLookup.get(key); break; } }
+  const tacticOrder = [
+    'reconnaissance','resource-development','initial-access','execution','persistence',
+    'privilege-escalation','defense-evasion','credential-access','discovery','lateral-movement',
+    'collection','command-and-control','exfiltration','impact'
+  ];
+
+  const tacticTitle = id => id
+    ? id.split('-').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(' ')
+    : 'Unmapped';
+
+  function metaToObject(metadataArr){
+    const o = {};
+    (metadataArr||[]).forEach(m => { if(m && m.name) o[m.name] = m.value; });
+    return o;
+  }
+
+  function normalizePlaybookId(v){
+    let s = String(v||'').trim();
+    if(!s) return null;
+    s = s.replace(/^playbooks\//,'');
+    s = s.replace(/\.md$/i,'');
+    return s || null;
+  }
+
+  // Map CyRECS IDs -> existing repo playbook filenames (WITHOUT .md)
+  // (These filenames match your /playbooks/*.md files)
+  const playbookIdByCyrecs = {
+    "CR-IA-01": "phishing_workstation",
+    "CR-IA-02": "supply_chain_component",
+    "CR-IA-03": "legacy_protocol_injection",
+
+    "CR-ID-01": "caller_id_spoof",
+    "CR-ID-02": "lis_impersonation",
+
+    "CR-PA-01": "protocol_downgrade",
+    "CR-PA-02": "rtp_injection",
+
+    "CR-CO-01": "data_exfil_lis",
+
+    "CR-DM-01": "lvf_gis_poison",
+    "CR-DM-02": "lis_data_tamper",
+
+    "CR-SD-01": "tdos_sip_flood",
+    "CR-SD-03": "lpg_isolation",
+
+    "CR-IM-01": "ransomware_psap",
+
+    "CR-VE-01": "sw_bugs_esrp",
+    "CR-MC-01": "misconfig_admin",
+
+    // Optional/extra playbooks you currently have in repo:
+    // "CR-??-??": "lis_query_flood"
+  };
+
+  function getCyrecsId(meta){
+    return meta["CyRECS ID"] || meta["CyRECS IDs"] || "";
+  }
+
+  function getDisplayName(meta, entry){
+    return meta["Display Name"] || meta["Technique Name"] || entry.comment || entry.techniqueID || "Unnamed technique";
+  }
+
+  function getPlaybookId(meta, cyrecsId){
+    const direct = normalizePlaybookId(meta["Playbook"] || meta["Playbooks"] || "");
+    if(direct) return direct;
+    if(cyrecsId && playbookIdByCyrecs[cyrecsId]) return playbookIdByCyrecs[cyrecsId];
+    return null;
+  }
+
+  (async ()=>{
+    let layer = null;
+    try{
+      const res = await fetch('../ng911_attck_layer.json', {cache:'no-store'});
+      if(res.ok) layer = await res.json();
+    }catch(e){}
+
+    const root = document.getElementById('pb-root');
+    if(!layer || !Array.isArray(layer.techniques)){
+      root.innerHTML = '<div class="muted">Error loading ng911_attck_layer.json</div>';
+      return;
     }
-    const legacyTech = legacy ? legacy.tech : null;
-    const technique = {
-      id: legacyTech ? legacyTech.id : entry.techniqueID,
-      name: parsed.name || (legacyTech && legacyTech.name) || entry.techniqueID,
-      mitreId: entry.techniqueID,
-      tactic: bucket.name,
-      score: entry.score,
-      playbookId: legacyTech ? legacyTech.id : entry.techniqueID
-    };
-    bucket.techniques.push(technique);
-  });
-  return Array.from(buckets.values()).sort((a,b)=>{
-    const ai = tacticOrder.indexOf(a.id);
-    const bi = tacticOrder.indexOf(b.id);
-    if(ai === -1 && bi === -1) return a.name.localeCompare(b.name);
-    if(ai === -1) return 1;
-    if(bi === -1) return -1;
-    return ai - bi;
-  }).map(bucket=>({
-    ...bucket,
-    techniques: bucket.techniques.sort((a,b)=>{
-      if(a.score!=null && b.score!=null && a.score!==b.score) return b.score - a.score;
-      return a.name.localeCompare(b.name);
-    })
-  }));
-}
-(async ()=>{
-  let legacy={tactics:[]};
-  let layer=null;
-  try{ const res = await fetch('../mapping.json',{cache:'no-store'}); if(res.ok) legacy = await res.json(); }catch(e){}
-  try{ const res = await fetch('../ng911_attck_layer.json',{cache:'no-store'}); if(res.ok) layer = await res.json(); }catch(e){}
-  const tactics = layer ? mergeLayer(layer, legacy) : (legacy.tactics||[]);
-  const list = document.getElementById('list');
-  tactics.forEach(t=>{
-    const header = document.createElement('li');
-    header.innerHTML = `<strong>${t.name}</strong>`;
-    list.appendChild(header);
-    t.techniques.forEach(tc=>{
-      const li=document.createElement('li');
-      const mappingLabel = tc.mitreId ? (`${tc.mitreId}${tc.playbookId!==tc.mitreId?` → ${tc.playbookId}`:''}`) : (tc.playbookId||tc.id||'');
-      li.innerHTML = `<a href="view.html?id=${encodeURIComponent(tc.playbookId || tc.id)}">${tc.name} <span class="muted">(${mappingLabel})</span></a>`;
-      list.appendChild(li);
+
+    // Bucket by tactic
+    const buckets = new Map();
+    (layer.techniques||[]).forEach(entry=>{
+      const tid = entry.tactic || 'unmapped';
+      if(!buckets.has(tid)){
+        buckets.set(tid, { id: tid, name: tacticTitle(tid), items: [] });
+      }
+      const meta = metaToObject(entry.metadata||[]);
+      const cyrecsId = getCyrecsId(meta);
+      const name = getDisplayName(meta, entry);
+      const pbId = getPlaybookId(meta, cyrecsId);
+
+      buckets.get(tid).items.push({
+        name,
+        cyrecsId,
+        techniqueID: entry.techniqueID || "",
+        playbookId: pbId
+      });
     });
-  });
-})();
+
+    // Sort buckets in a nice order
+    const ordered = Array.from(buckets.values()).sort((a,b)=>{
+      const ai = tacticOrder.indexOf(a.id);
+      const bi = tacticOrder.indexOf(b.id);
+      if(ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if(ai === -1) return 1;
+      if(bi === -1) return -1;
+      return ai - bi;
+    });
+
+    // Sort items by name
+    ordered.forEach(b => b.items.sort((x,y)=> (x.name||"").localeCompare(y.name||"")));
+
+    // Render
+    root.innerHTML = '';
+    ordered.forEach(b=>{
+      const sec = document.createElement('div');
+      sec.className = 'section';
+      sec.innerHTML = `<h3>${b.name}</h3>`;
+      const ul = document.createElement('ul');
+
+      b.items.forEach(it=>{
+        const li = document.createElement('li');
+
+        const metaBits = [it.cyrecsId, it.techniqueID].filter(Boolean).join(' • ');
+        const metaSpan = metaBits ? ` <span class="meta">(${metaBits})</span>` : '';
+
+        if(it.playbookId){
+          li.innerHTML = `<a href="view.html?id=${encodeURIComponent(it.playbookId)}">${it.name}</a>${metaSpan}`;
+        }else{
+          li.innerHTML = `<span class="muted">${it.name}</span>${metaSpan} <span class="meta muted">(no playbook)</span>`;
+        }
+
+        ul.appendChild(li);
+      });
+
+      sec.appendChild(ul);
+      root.appendChild(sec);
+    });
+  })();
 </script>
 </body>
 </html>
