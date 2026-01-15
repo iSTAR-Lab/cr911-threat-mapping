@@ -1,9 +1,9 @@
 /* CyRECS911 Matrix — attack-first + playbook links (no legacy merge)
-   FIX: Playbook links resolve to actual /playbooks/*.md filenames (not CR-IDs)
+   FIX: view.html expects CyRECS IDs (CR-XX-00). Raw/Download must use repo md filenames.
    UI: No score displayed; colors retained
 */
 (function () {
-  console.log("[CyRECS911] assets/cr911.js loaded v6");
+  console.log("[CyRECS911] assets/cr911.js loaded v7");
 
   const esc = (s) =>
     String(s || "")
@@ -15,9 +15,9 @@
   const layerPath = () => (inPlaybooksFolder() ? "../ng911_attck_layer.json" : "ng911_attck_layer.json");
   const playbooksBase = () => (inPlaybooksFolder() ? "" : "playbooks/");
 
-  // ✅ IMPORTANT: map CyRECS IDs -> repo playbook filenames (without .md)
-  // These must match your /playbooks/*.md filenames exactly.
-  const playbookIdByCyrecs = {
+  // ✅ Map CyRECS IDs -> repo playbook filenames (WITHOUT .md)
+  // Must match your /playbooks/*.md filenames exactly.
+  const playbookFileIdByCyrecs = {
     "CR-IA-01": "phishing_workstation",
     "CR-IA-02": "supply_chain_component",
     "CR-IA-03": "legacy_protocol_injection",
@@ -40,9 +40,6 @@
 
     "CR-VE-01": "sw_bugs_esrp",
     "CR-MC-01": "misconfig_admin"
-
-    // You have this playbook file too; hook it up when you add a technique for it:
-    // "CR-??-??": "lis_query_flood"
   };
 
   const tacticOrder = [
@@ -73,6 +70,16 @@
     "command-and-control": "Command & Control",
     unmapped: "Unmapped"
   };
+
+  function normId(s) {
+    return String(s || "").trim();
+  }
+  function normKey(s) {
+    return normId(s).toUpperCase();
+  }
+  function looksLikeCyrecsId(s) {
+    return /^CR-[A-Z]{2}-\d{2}$/i.test(String(s || "").trim());
+  }
 
   function tacticTitle(id) {
     if (!id) return "Unmapped";
@@ -109,9 +116,7 @@
   }
 
   function highlightCode() {
-    try {
-      hljs.highlightAll();
-    } catch (e) {}
+    try { hljs.highlightAll(); } catch (e) {}
   }
 
   function normalizePlaybookId(v) {
@@ -123,45 +128,39 @@
     return s || null;
   }
 
-  function normId(s) {
-    return String(s || "").trim();
-  }
-  function normKey(s) {
-    return normId(s).toUpperCase();
-  }
-  function looksLikeCyrecsId(s) {
-    return /^CR-[A-Z]{2}-\d{2}$/i.test(String(s || "").trim());
+  // ✅ view.html expects CYRECS ID (CR-XX-00)
+  function playbookViewUrl(viewId) {
+    if (!viewId) return null;
+    return playbooksBase() + "view.html?id=" + encodeURIComponent(viewId);
   }
 
-  function resolvePlaybookId(meta, cyrecsId) {
+  // ✅ raw/download must point to real markdown file name
+  function playbookMdPath(fileId) {
+    if (!fileId) return null;
+    return playbooksBase() + fileId + ".md";
+  }
+
+  function resolvePlaybook(meta, cyrecsId) {
     const cy = normKey(cyrecsId);
 
+    // If layer already provides a real filename id, use it for file path
     const directRaw = meta["Playbook"] || meta["Playbooks"] || "";
     const direct = normalizePlaybookId(directRaw);
 
-    // ✅ If Playbook is a real filename id (NOT "CR-XX-00"), use it
-    // e.g., "legacy_protocol_injection" or "legacy_protocol_injection.md"
+    // Determine fileId
+    let fileId = null;
     if (direct && !looksLikeCyrecsId(direct)) {
-      return direct;
+      // direct is already a filename id (e.g., legacy_protocol_injection)
+      fileId = direct;
+    } else if (cy && playbookFileIdByCyrecs[cy]) {
+      // map CyRECS -> filename id
+      fileId = playbookFileIdByCyrecs[cy];
     }
 
-    // ✅ If Playbook is CR-* or missing, map from CyRECS -> repo filename
-    if (cy && playbookIdByCyrecs[cy]) {
-      return playbookIdByCyrecs[cy];
-    }
+    // Determine viewId: always use CyRECS ID if available
+    const viewId = cy && looksLikeCyrecsId(cy) ? cy : null;
 
-    // fallback (may still 404 if it's CR-*)
-    return direct || null;
-  }
-
-  function playbookMdPath(pbId) {
-    if (!pbId) return null;
-    return playbooksBase() + pbId + ".md";
-  }
-
-  function playbookViewUrl(pbId) {
-    if (!pbId) return null;
-    return playbooksBase() + "view.html?id=" + encodeURIComponent(pbId);
+    return { viewId, fileId };
   }
 
   function normalizeTechniqueFromLayer(entry) {
@@ -170,7 +169,7 @@
     const cyrecsId = normId(meta["CyRECS ID"] || meta["CyRECS IDs"] || "");
     const name = meta["Display Name"] || entry.comment || entry.techniqueID || "Unnamed technique";
 
-    const pbId = resolvePlaybookId(meta, cyrecsId);
+    const pb = resolvePlaybook(meta, cyrecsId);
 
     const technique = {
       cyrecsId: cyrecsId || null,
@@ -180,9 +179,12 @@
       name,
       color: entry.color || null,
 
-      playbookId: pbId,
-      playbookView: pbId ? playbookViewUrl(pbId) : null,
-      playbookMd: pbId ? playbookMdPath(pbId) : null,
+      // ✅ Two different IDs:
+      playbookViewId: pb.viewId,     // e.g., CR-IA-03 (works with existing view.html)
+      playbookFileId: pb.fileId,     // e.g., legacy_protocol_injection (real .md file)
+
+      playbookView: pb.viewId ? playbookViewUrl(pb.viewId) : null,
+      playbookMd: pb.fileId ? playbookMdPath(pb.fileId) : null,
 
       attack: {
         overview: meta["Attack Overview"] || "",
@@ -230,19 +232,20 @@
     const download = document.getElementById("btn-download");
     if (!openRaw || !download) return;
 
-    if (!tech.playbookId) {
+    // These buttons are in the modal; they should use the REAL md file
+    if (!tech.playbookMd) {
       openRaw.style.display = "none";
       download.style.display = "none";
       return;
     }
 
-    openRaw.textContent = "Open Playbook";
-    openRaw.href = tech.playbookView;
+    openRaw.textContent = "Open raw";
+    openRaw.href = tech.playbookMd;
     openRaw.style.display = "inline-flex";
 
     download.href = tech.playbookMd;
     download.style.display = "inline-flex";
-    download.setAttribute("download", tech.playbookId + ".md");
+    download.setAttribute("download", (tech.playbookFileId || "playbook") + ".md");
   }
 
   function createCell(tech) {
@@ -255,6 +258,7 @@
       c.style.boxShadow = "inset 0 0 0 1px " + tech.color + "55";
     }
 
+    // Tile Playbook link must go to view.html using CyRECS ID
     const pbLink = tech.playbookView
       ? `<a class="pb-link" href="${esc(tech.playbookView)}" target="_blank" rel="noopener">Playbook →</a>`
       : `<span class="pb-link muted">No playbook</span>`;
@@ -292,7 +296,7 @@
         const idEl = document.getElementById("id");
         if (idEl) idEl.textContent = tech.cyrecsId || tech.techniqueID || "—";
 
-        // Hide score block if it exists in HTML
+        // Hide score block if it exists
         const scoreEl = document.getElementById("score");
         if (scoreEl) {
           const block = scoreEl.closest(".meta-block");
@@ -367,7 +371,6 @@
     return null;
   }
 
-  // If playbooks/index.html has pb-index, this builds it
   function buildPlaybooksIndex(mapping) {
     const listRoot = document.getElementById("pb-index");
     if (!listRoot) return;
@@ -392,6 +395,7 @@
         const label = tech.name;
         const meta = [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ");
 
+        // Link to view.html using CyRECS ID (what view.html understands)
         if (tech.playbookView) {
           li.innerHTML =
             `<a href="${esc(tech.playbookView)}" class="pb-a">` +
