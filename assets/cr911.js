@@ -3,7 +3,7 @@
    UI: No score displayed; colors retained
 */
 (function () {
-  console.log("[CyRECS911] assets/cr911.js loaded v5");
+  console.log("[CyRECS911] assets/cr911.js loaded v6");
 
   const esc = (s) =>
     String(s || "")
@@ -39,7 +39,7 @@
     "CR-IM-01": "ransomware_psap",
 
     "CR-VE-01": "sw_bugs_esrp",
-    "CR-MC-01": "misconfig_admin",
+    "CR-MC-01": "misconfig_admin"
 
     // You have this playbook file too; hook it up when you add a technique for it:
     // "CR-??-??": "lis_query_flood"
@@ -109,7 +109,9 @@
   }
 
   function highlightCode() {
-    try { hljs.highlightAll(); } catch (e) {}
+    try {
+      hljs.highlightAll();
+    } catch (e) {}
   }
 
   function normalizePlaybookId(v) {
@@ -121,16 +123,35 @@
     return s || null;
   }
 
+  function normId(s) {
+    return String(s || "").trim();
+  }
+  function normKey(s) {
+    return normId(s).toUpperCase();
+  }
+  function looksLikeCyrecsId(s) {
+    return /^CR-[A-Z]{2}-\d{2}$/i.test(String(s || "").trim());
+  }
+
   function resolvePlaybookId(meta, cyrecsId) {
-    // 1) If ng911_attck_layer.json has a direct filename, use it
-    const direct = normalizePlaybookId(meta["Playbook"] || meta["Playbooks"] || "");
-    if (direct && direct !== cyrecsId) return direct;
+    const cy = normKey(cyrecsId);
 
-    // 2) Otherwise map from CyRECS ID -> repo filename
-    if (cyrecsId && playbookIdByCyrecs[cyrecsId]) return playbookIdByCyrecs[cyrecsId];
+    const directRaw = meta["Playbook"] || meta["Playbooks"] || "";
+    const direct = normalizePlaybookId(directRaw);
 
-    // 3) Nothing found
-    return null;
+    // ✅ If Playbook is a real filename id (NOT "CR-XX-00"), use it
+    // e.g., "legacy_protocol_injection" or "legacy_protocol_injection.md"
+    if (direct && !looksLikeCyrecsId(direct)) {
+      return direct;
+    }
+
+    // ✅ If Playbook is CR-* or missing, map from CyRECS -> repo filename
+    if (cy && playbookIdByCyrecs[cy]) {
+      return playbookIdByCyrecs[cy];
+    }
+
+    // fallback (may still 404 if it's CR-*)
+    return direct || null;
   }
 
   function playbookMdPath(pbId) {
@@ -146,10 +167,9 @@
   function normalizeTechniqueFromLayer(entry) {
     const meta = metaToObject(entry.metadata || []);
 
-    const cyrecsId = meta["CyRECS ID"] || meta["CyRECS IDs"] || "";
+    const cyrecsId = normId(meta["CyRECS ID"] || meta["CyRECS IDs"] || "");
     const name = meta["Display Name"] || entry.comment || entry.techniqueID || "Unnamed technique";
 
-    // ✅ resolved to actual playbook filename like "legacy_protocol_injection"
     const pbId = resolvePlaybookId(meta, cyrecsId);
 
     const technique = {
@@ -216,7 +236,6 @@
       return;
     }
 
-    // Keep label consistent with your view.html UI
     openRaw.textContent = "Open Playbook";
     openRaw.href = tech.playbookView;
     openRaw.style.display = "inline-flex";
@@ -370,7 +389,7 @@
         const li = document.createElement("li");
         li.className = "pb-item";
 
-        const label = tech.name; // show names
+        const label = tech.name;
         const meta = [tech.cyrecsId, tech.techniqueID].filter(Boolean).join(" • ");
 
         if (tech.playbookView) {
