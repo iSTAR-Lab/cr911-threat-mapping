@@ -94,7 +94,7 @@
 </div>
 
 <script>
-  const REPO = "github.com/iSTAR-Lab/cr911-threat-mapping";
+  const REPO = "https://github.com/iSTAR-Lab/cr911-threat-mapping";
 
   // Pre-fill from query params
   const p = new URLSearchParams(window.location.search);
@@ -135,7 +135,7 @@
     // Create a 'feedback' label in the repo for best results.
     params.set("labels", "feedback");
 
-    return `${REPO}/issues/new?${params.toString()}`;
+    return REPO.replace(/\/$/, "") + "/issues/new?" + params.toString();
   }
 
   document.getElementById("fb").addEventListener("submit", (e) => {
