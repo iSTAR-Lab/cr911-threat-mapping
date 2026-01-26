@@ -77,8 +77,9 @@
         <div class="subtitle" id="modal-sub"></div>
       </div>
       <div class="toolbar">
+        <button class="btn" id="btn-feedback">Feedback</button>
         <button class="btn" id="btn-print">Print</button>
-        <a class="btn" id="btn-open-raw" target="_blank" rel="noopener">Open raw</a>
+        <a class="btn" id="btn-open-raw" target="_blank">Open raw</a>
         <a class="btn" id="btn-download">Download .md</a>
         <button class="btn" id="closeBtn">Close</button>
       </div>
@@ -97,7 +98,17 @@
   </div>
 </div>
 
-<footer>CR911 Threat Matrix — <code>ng911_attck_layer.json</code> + legacy <code>mapping.json</code> supply the data shown.</footer>
+<footer>
+  CR911 Threat Matrix —
+  <code>ng911_attck_layer.json</code> + <code>mapping.json</code>
+  <br><br>
+  <a class="btn" href="feedback.html">Submit feedback</a>
+  <a class="btn"
+     href="https://github.com/YOUR_ORG/YOUR_REPO/issues/new"
+     target="_blank">
+    Suggest via GitHub
+  </a>
+</footer>
 
 <script src="assets/cr911.js?v=1" defer></script>
 </body>

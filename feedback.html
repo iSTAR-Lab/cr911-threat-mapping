@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CR911 – Submit Feedback</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body {
+      background:#0b1226;
+      color:#e6eef8;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+      margin:0;
+      padding:40px 20px;
+    }
+    .wrap { max-width:720px; margin:0 auto; }
+    h1 { color:#00d9a3; }
+    label { display:block; margin-top:16px; font-size:14px; }
+    input, textarea, select {
+      width:100%;
+      margin-top:6px;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #1d3557;
+      background:#041825;
+      color:#e6eef8;
+    }
+    textarea { min-height:120px; }
+    button {
+      margin-top:20px;
+      padding:12px 16px;
+      border-radius:10px;
+      border:0;
+      background:#00d9a3;
+      color:#031028;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .muted { color:#9fb0c9; font-size:13px; margin-top:8px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Submit Feedback or Recommendation</h1>
+  <p class="muted">
+    This form is public and does not require a GitHub account.
+    Submissions are reviewed before inclusion.
+  </p>
+
+  <!-- 🔁 Replace action with your Formspree endpoint -->
+  <form action="https://formspree.io/f/XXXXYYYY" method="POST">
+    <label>Feedback type
+      <select name="type">
+        <option>Correction / Clarification</option>
+        <option>Recommendation / Improvement</option>
+        <option>New Technique</option>
+        <option>New Playbook</option>
+        <option>Other</option>
+      </select>
+    </label>
+
+    <label>Technique ID (if applicable)
+      <input name="technique_id" id="technique">
+    </label>
+
+    <label>Page URL
+      <input name="page_url" id="page">
+    </label>
+
+    <label>Your feedback
+      <textarea name="message" required></textarea>
+    </label>
+
+    <label>Reference / source (optional)
+      <input name="reference">
+    </label>
+
+    <button type="submit">Submit feedback</button>
+  </form>
+</div>
+
+<script>
+  const p = new URLSearchParams(window.location.search);
+  document.getElementById("technique").value = p.get("technique") || "";
+  document.getElementById("page").value = p.get("page") || window.location.href;
+</script>
+</body>
+</html>

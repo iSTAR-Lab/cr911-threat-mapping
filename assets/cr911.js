@@ -350,7 +350,15 @@
         highlightCode();
 
         setPlaybookButtons(tech);
-
+        const fb = document.getElementById("btn-feedback");
+        if (fb) {
+          const url =
+            "feedback.html?technique=" +
+            encodeURIComponent(tech.cyrecsId || "") +
+            "&page=" +
+            encodeURIComponent(window.location.href);
+          fb.onclick = () => window.open(url, "_blank", "noopener");
+        }
         const bd = document.getElementById("backdrop");
         bd.style.display = "flex";
         bd.setAttribute("aria-hidden", "false");

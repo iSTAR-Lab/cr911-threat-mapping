@@ -1,0 +1,33 @@
+name: CR911 Recommendation / Improvement
+description: Suggest an improvement, correction, or new content
+title: "[CR911] "
+labels: ["recommendation"]
+body:
+  - type: dropdown
+    attributes:
+      label: Contribution type
+      options:
+        - Correction
+        - Improvement
+        - New Technique
+        - New Playbook
+        - Evidence / Reference
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Technique ID (if applicable)
+      placeholder: CR-IA-01
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: Clearly describe the recommendation or issue.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: References / Sources
+      description: Standards, papers, incidents, or URLs (optional)
