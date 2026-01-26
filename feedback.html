@@ -13,7 +13,8 @@
       padding:40px 20px;
     }
     .wrap { max-width:720px; margin:0 auto; }
-    h1 { color:#00d9a3; }
+    h1 { color:#00d9a3; margin:0 0 8px; }
+    p { margin:0 0 10px; }
     label { display:block; margin-top:16px; font-size:14px; }
     input, textarea, select {
       width:100%;
@@ -24,7 +25,7 @@
       background:#041825;
       color:#e6eef8;
     }
-    textarea { min-height:120px; }
+    textarea { min-height:140px; }
     button {
       margin-top:20px;
       padding:12px 16px;
@@ -32,56 +33,124 @@
       border:0;
       background:#00d9a3;
       color:#031028;
-      font-weight:600;
+      font-weight:700;
       cursor:pointer;
     }
-    .muted { color:#9fb0c9; font-size:13px; margin-top:8px; }
+    .muted { color:#9fb0c9; font-size:13px; margin-top:8px; line-height:1.4; }
+    .note {
+      margin-top:14px;
+      padding:12px;
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px;
+      background:rgba(255,255,255,0.03);
+    }
+    a { color:#bfefff; }
   </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Submit Feedback or Recommendation</h1>
-  <p class="muted">
-    This form is public and does not require a GitHub account.
-    Submissions are reviewed before inclusion.
-  </p>
+  <h1>Submit Feedback / Recommendation</h1>
 
-  <!-- 🔁 Replace action with your Formspree endpoint -->
-  <form action="https://formspree.io/f/XXXXYYYY" method="POST">
+  <div class="note">
+    <div class="muted">
+      This will open a pre-filled <strong>GitHub Issue</strong> in a new tab.
+      You’ll need a GitHub account to submit it.
+    </div>
+  </div>
+
+  <form id="fb">
     <label>Feedback type
-      <select name="type">
-        <option>Correction / Clarification</option>
-        <option>Recommendation / Improvement</option>
-        <option>New Technique</option>
-        <option>New Playbook</option>
-        <option>Other</option>
+      <select id="type" required>
+        <option value="Correction / Clarification">Correction / Clarification</option>
+        <option value="Recommendation / Improvement">Recommendation / Improvement</option>
+        <option value="New Technique">New Technique</option>
+        <option value="New Playbook">New Playbook</option>
+        <option value="Other">Other</option>
       </select>
     </label>
 
     <label>Technique ID (if applicable)
-      <input name="technique_id" id="technique">
+      <input id="technique" placeholder="CR-IA-01">
     </label>
 
     <label>Page URL
-      <input name="page_url" id="page">
+      <input id="page">
     </label>
 
     <label>Your feedback
-      <textarea name="message" required></textarea>
+      <textarea id="message" required placeholder="What should change? Why? What’s the expected benefit/impact?"></textarea>
     </label>
 
     <label>Reference / source (optional)
-      <input name="reference">
+      <input id="reference" placeholder="NENA i3 section, NG-SEC section, paper, incident report, etc.">
     </label>
 
-    <button type="submit">Submit feedback</button>
+    <button type="submit">Open GitHub Issue</button>
+
+    <div class="muted" style="margin-top:10px">
+      Prefer a PR? Open the repo and edit <code>mapping.json</code> / playbooks directly.
+    </div>
   </form>
 </div>
 
 <script>
+  // 🔧 SET THIS
+  const REPO = "https://github.com/YOUR_ORG/YOUR_REPO";
+
+  // Pre-fill from query params
   const p = new URLSearchParams(window.location.search);
-  document.getElementById("technique").value = p.get("technique") || "";
-  document.getElementById("page").value = p.get("page") || window.location.href;
+  const technique = p.get("technique") || "";
+  const page = p.get("page") || window.location.href;
+
+  document.getElementById("technique").value = technique;
+  document.getElementById("page").value = page;
+
+  function buildIssueUrl({ type, techniqueId, pageUrl, message, reference }) {
+    const titleBits = ["[CR911]", type];
+    if (techniqueId) titleBits.push(techniqueId);
+    const title = titleBits.join(" — ");
+
+    const bodyLines = [];
+    bodyLines.push("## Summary");
+    bodyLines.push(message.trim());
+    bodyLines.push("");
+    bodyLines.push("## Context");
+    bodyLines.push(`- Feedback type: **${type}**`);
+    bodyLines.push(`- Technique ID: **${techniqueId || "N/A"}**`);
+    bodyLines.push(`- Page: ${pageUrl}`);
+    if (reference && reference.trim()) {
+      bodyLines.push(`- Reference: ${reference.trim()}`);
+    }
+    bodyLines.push("");
+    bodyLines.push("## Proposed change (optional)");
+    bodyLines.push("- _What should be updated in the matrix/playbook?_");
+    bodyLines.push("");
+    bodyLines.push("## Rationale / Impact (optional)");
+    bodyLines.push("- _Why is this important? What risk or confusion does it reduce?_");
+
+    const params = new URLSearchParams();
+    params.set("title", title);
+    params.set("body", bodyLines.join("\n"));
+
+    // Optional: label (works if label exists; otherwise GitHub ignores it)
+    // Create a 'feedback' label in the repo for best results.
+    params.set("labels", "feedback");
+
+    return `${REPO}/issues/new?${params.toString()}`;
+  }
+
+  document.getElementById("fb").addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const type = document.getElementById("type").value;
+    const techniqueId = document.getElementById("technique").value.trim();
+    const pageUrl = document.getElementById("page").value.trim() || window.location.href;
+    const message = document.getElementById("message").value;
+    const reference = document.getElementById("reference").value;
+
+    const url = buildIssueUrl({ type, techniqueId, pageUrl, message, reference });
+    window.open(url, "_blank", "noopener");
+  });
 </script>
 </body>
 </html>
