@@ -11,6 +11,7 @@ CyRECS911 enables analysts, engineers, and responders to visualize, classify, an
 playbooks/           # Atomic threat playbooks describing cyber scenarios
 schema/              # JSON schema for CI validation of playbooks
 ci/validate_schema   # CI workflow for ensuring playbook correctness
+sbom-analysis/       # SBOM-driven supply-chain vulnerability scanning pipeline
 view.html            # Rendered matrix / UI view of the threat landscape
 ```
 
@@ -35,6 +36,30 @@ Use the existing CI workflow or run the validator locally:
 ```bash
 python ci/validate_schema.py playbooks/
 ```
+
+## SBOM Vulnerability Analysis
+
+The [`sbom-analysis/`](sbom-analysis/) folder adds a supply-chain analysis
+pipeline that operationalizes the `SBOM` mitigation from the
+[`supply_chain_component`](playbooks/supply_chain_component.md) playbook. Given a
+component's Software Bill of Materials (SPDX or CycloneDX), it runs four
+independent vulnerability scanners (bomber, grype, osv-scanner, trivy), merges
+and deduplicates their findings into a single CSV, and validates every reported
+vulnerability id against the MITRE CVE API and OSV.dev.
+
+This produces empirical, cross-checked vulnerability data for the third-party and
+vendor components that ESInet/NG911 systems depend on, feeding the supply-chain
+threat pathways the playbooks describe.
+
+```bash
+cd sbom-analysis
+pip install -r requirements.txt
+# add your SBOM files (*.spdx.json / *.cyclonedx.json) to sbom-analysis/SBOMs/
+python scripts/main.py
+```
+
+See [`sbom-analysis/README.md`](sbom-analysis/README.md) for scanner install
+steps, the output layout, and known limitations.
 
 ## Purpose of CyRECS911
 

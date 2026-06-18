@@ -1,0 +1,4 @@
+# Place your SBOM files here
+#
+# Drop *.spdx.json (SPDX) or *.cyclonedx.json (CycloneDX) files in this folder,
+# then run: python scripts/main.py
